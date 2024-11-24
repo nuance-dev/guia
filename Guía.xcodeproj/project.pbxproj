@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		C87097222CE2C17900FD7444 /* Guía.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Guía.app; path = "/Users/joaquintournier/Documents/Personal/Minimal Apps/Guía/build/Debug/Guía.app"; sourceTree = "<absolute>"; };
+		C8AF573A2CF2E44E004EFE7C /* Guía.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Guía.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		C87097232CE2C17900FD7444 /* Guía */ = {
+		C8AF573C2CF2E44E004EFE7C /* Guía */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Guía;
+			path = "Guía";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C870971F2CE2C17900FD7444 /* Frameworks */ = {
+		C8AF57372CF2E44E004EFE7C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,74 +29,83 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		C82F04452CCB3DD20012C07B = {
+		C8AF57312CF2E44E004EFE7C = {
 			isa = PBXGroup;
 			children = (
-				C87097232CE2C17900FD7444 /* Guía */,
+				C8AF573C2CF2E44E004EFE7C /* Guía */,
+				C8AF573B2CF2E44E004EFE7C /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		C8AF573B2CF2E44E004EFE7C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C8AF573A2CF2E44E004EFE7C /* Guía.app */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		C87097212CE2C17900FD7444 /* Guía */ = {
+		C8AF57392CF2E44E004EFE7C /* Guía */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C870972E2CE2C17B00FD7444 /* Build configuration list for PBXNativeTarget "Guía" */;
+			buildConfigurationList = C8AF57492CF2E450004EFE7C /* Build configuration list for PBXNativeTarget "Guía" */;
 			buildPhases = (
-				C870971E2CE2C17900FD7444 /* Sources */,
-				C870971F2CE2C17900FD7444 /* Frameworks */,
-				C87097202CE2C17900FD7444 /* Resources */,
+				C8AF57362CF2E44E004EFE7C /* Sources */,
+				C8AF57372CF2E44E004EFE7C /* Frameworks */,
+				C8AF57382CF2E44E004EFE7C /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				C87097232CE2C17900FD7444 /* Guía */,
+				C8AF573C2CF2E44E004EFE7C /* Guía */,
 			);
-			name = Guía;
+			name = "Guía";
 			packageProductDependencies = (
 			);
-			productName = Guía;
-			productReference = C87097222CE2C17900FD7444 /* Guía.app */;
+			productName = "Guía";
+			productReference = C8AF573A2CF2E44E004EFE7C /* Guía.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		C82F04462CCB3DD20012C07B /* Project object */ = {
+		C8AF57322CF2E44E004EFE7C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
-					C87097212CE2C17900FD7444 = {
+					C8AF57392CF2E44E004EFE7C = {
 						CreatedOnToolsVersion = 16.1;
 					};
 				};
 			};
-			buildConfigurationList = C82F04492CCB3DD20012C07B /* Build configuration list for PBXProject "Guía" */;
+			buildConfigurationList = C8AF57352CF2E44E004EFE7C /* Build configuration list for PBXProject "Guía" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = C82F04452CCB3DD20012C07B;
+			mainGroup = C8AF57312CF2E44E004EFE7C;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = C82F04452CCB3DD20012C07B;
+			productRefGroup = C8AF573B2CF2E44E004EFE7C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C87097212CE2C17900FD7444 /* Guía */,
+				C8AF57392CF2E44E004EFE7C /* Guía */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C87097202CE2C17900FD7444 /* Resources */ = {
+		C8AF57382CF2E44E004EFE7C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -106,7 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C870971E2CE2C17900FD7444 /* Sources */ = {
+		C8AF57362CF2E44E004EFE7C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -116,7 +125,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		C82F045B2CCB3DD40012C07B /* Debug */ = {
+		C8AF57472CF2E450004EFE7C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -150,7 +159,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -170,7 +178,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -180,7 +188,7 @@
 			};
 			name = Debug;
 		};
-		C82F045C2CCB3DD40012C07B /* Release */ = {
+		C8AF57482CF2E450004EFE7C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -214,7 +222,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -228,7 +235,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -236,56 +243,60 @@
 			};
 			name = Release;
 		};
-		C870972F2CE2C17B00FD7444 /* Debug */ = {
+		C8AF574A2CF2E450004EFE7C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Guía/Guía.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Guía/Guia.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Guía/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Guía/Preview Content\"";
 				DEVELOPMENT_TEAM = YYMLDY74QZ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Minimal.Guía;
+				PRODUCT_BUNDLE_IDENTIFIER = Minimal.Guia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		C87097302CE2C17B00FD7444 /* Release */ = {
+		C8AF574B2CF2E450004EFE7C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Guía/Guía.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Guía/Guia.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Guía/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Guía/Preview Content\"";
 				DEVELOPMENT_TEAM = YYMLDY74QZ;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Minimal.Guía;
+				PRODUCT_BUNDLE_IDENTIFIER = Minimal.Guia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -295,25 +306,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C82F04492CCB3DD20012C07B /* Build configuration list for PBXProject "Guía" */ = {
+		C8AF57352CF2E44E004EFE7C /* Build configuration list for PBXProject "Guía" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C82F045B2CCB3DD40012C07B /* Debug */,
-				C82F045C2CCB3DD40012C07B /* Release */,
+				C8AF57472CF2E450004EFE7C /* Debug */,
+				C8AF57482CF2E450004EFE7C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C870972E2CE2C17B00FD7444 /* Build configuration list for PBXNativeTarget "Guía" */ = {
+		C8AF57492CF2E450004EFE7C /* Build configuration list for PBXNativeTarget "Guía" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C870972F2CE2C17B00FD7444 /* Debug */,
-				C87097302CE2C17B00FD7444 /* Release */,
+				C8AF574A2CF2E450004EFE7C /* Debug */,
+				C8AF574B2CF2E450004EFE7C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = C82F04462CCB3DD20012C07B /* Project object */;
+	rootObject = C8AF57322CF2E44E004EFE7C /* Project object */;
 }
