@@ -176,5 +176,38 @@ final class SensitivityAnalyzer {
         let maxPossibleChanges = (n * (n - 1)) / 2
         return 1.0 - (Double(changes) / Double(maxPossibleChanges))
     }
+    
+    // Add initializer
+    init(ahpAnalyzer: AHPAnalyzer = AHPAnalyzer()) {
+        self.ahpAnalyzer = ahpAnalyzer
+    }
+    
+    // Add missing types
+    private struct WeightVariation {
+        let delta: Double
+        let scores: [Double]
+    }
+    
+    private struct WeightVariationImpact {
+        let variation: WeightVariation
+        let originalRanking: [Double]
+        let modifiedRanking: [Double]
+    }
+    
+    // Add extension for interpolation
+    private extension ClosedRange where Bound == Double {
+        func interpolated(step: Int, steps: Int) -> Double {
+            let progress = Double(step) / Double(steps)
+            return lowerBound + (upperBound - lowerBound) * progress
+        }
+    }
+    
+    // Add missing method
+    private func identifyCriticalCriteria(_ sensitivities: [CriterionSensitivity]) -> [Criterion] {
+        let threshold = 0.1 // Sensitivity threshold for critical criteria
+        return sensitivities
+            .filter { $0.elasticity > threshold }
+            .map { $0.criterion }
+    }
 }
 
