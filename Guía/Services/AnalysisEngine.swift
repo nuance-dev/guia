@@ -115,7 +115,8 @@ final class AnalysisEngine {
             rankedOptions: rankedOptions,
             confidenceScore: 1.0 - ahpResults.consistencyRatio,
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
-            method: .ahp
+            method: .ahp,
+            criteria: decision.criteria
         )
     }
     
@@ -123,12 +124,21 @@ final class AnalysisEngine {
         let n = decision.criteria.count
         var matrix = Array(repeating: Array(repeating: 1.0, count: n), count: n)
         
+        // If pairwise comparisons exist, use them
+        if let pairwiseComparisons = decision.pairwiseComparisons {
+            return pairwiseComparisons
+        }
+        
+        // Otherwise, create matrix from weights
+        let normalizedWeights = decision.normalizeWeights()
         for i in 0..<n {
             for j in 0..<n {
-                if i != j {
-                    let wi = decision.weights[decision.criteria[i].id] ?? 1.0
-                    let wj = decision.weights[decision.criteria[j].id] ?? 1.0
-                    matrix[i][j] = wi / wj
+                let criterionI = decision.criteria[i]
+                let criterionJ = decision.criteria[j]
+                
+                if let weightI = normalizedWeights[criterionI.id],
+                   let weightJ = normalizedWeights[criterionJ.id] {
+                    matrix[i][j] = weightI / weightJ
                 }
             }
         }
@@ -235,7 +245,8 @@ final class AnalysisEngine {
             rankedOptions: rankedOptions,
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
-            method: .topsis
+            method: .topsis,
+            criteria: decision.criteria
         )
     }
     

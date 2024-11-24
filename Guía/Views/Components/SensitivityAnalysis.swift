@@ -211,7 +211,8 @@ private struct StabilityIndicator: View {
                 criticalCriteria: [],
                 switchingPoints: []
             ),
-            method: .ahp
+            method: .ahp,
+            criteria: []
         )
     )
 }
