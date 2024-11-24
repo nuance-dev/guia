@@ -28,32 +28,7 @@ struct SensitivityAnalysis: View {
             Text("Sensitivity Analysis")
                 .font(.headline)
             
-            Chart {
-                ForEach(results.sensitivityData.weightSensitivity.sorted(by: { $0.value > $1.value }), id: \.key) { id, sensitivity in
-                    if let criterion = results.rankedOptions.first?.breakdownByCriteria.keys.first(where: { $0 == id }) {
-                        BarMark(
-                            x: .value("Criterion", criterion.uuidString.prefix(8)),
-                            y: .value("Sensitivity", sensitivity)
-                        )
-                        .foregroundStyle(by: .value("Sensitivity", sensitivity))
-                    }
-                }
-            }
-            .chartForegroundStyleScale([
-                "High": Color.red.opacity(0.7),
-                "Medium": Color.orange.opacity(0.7),
-                "Low": Color.green.opacity(0.7)
-            ])
-            .frame(height: 200)
-            .chartYAxis {
-                AxisMarks(position: .leading)
-            }
-            .chartXAxis {
-                AxisMarks {
-                    AxisValueLabel()
-                        .rotationEffect(.degrees(-45))
-                }
-            }
+            SensitivityBarChart(sensitivityData: results.sensitivityData.weightSensitivity)
         }
     }
     
@@ -68,7 +43,7 @@ struct SensitivityAnalysis: View {
                     .foregroundColor(.secondary)
                 
                 Slider(value: $weightAdjustment, in: -0.2...0.2, step: 0.01)
-                    .onChange(of: weightAdjustment) { _ in
+                    .onChange(of: weightAdjustment) { oldValue, newValue in
                         // Update analysis with new weight
                         // This would trigger a recalculation in a real implementation
                     }
@@ -196,6 +171,42 @@ private struct StabilityIndicator: View {
         default:
             return "Highly sensitive to changes"
         }
+    }
+}
+
+private struct SensitivityBarChart: View {
+    let sensitivityData: [UUID: Double]
+    
+    var body: some View {
+        Chart(prepareChartData(), id: \.key) { item in
+            BarMark(
+                x: .value("Criterion", String(item.key.uuidString.prefix(8))),
+                y: .value("Sensitivity", item.value)
+            )
+            .foregroundStyle(getSensitivityColor(item.value))
+        }
+        .frame(height: 200)
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartXAxis {
+            AxisMarks {
+                AxisValueLabel()
+                    .offset(y: 10)
+            }
+        }
+    }
+    
+    private func getSensitivityColor(_ value: Double) -> Color {
+        switch value {
+        case 0.8...: return .red.opacity(0.7)
+        case 0.5..<0.8: return .orange.opacity(0.7)
+        default: return .green.opacity(0.7)
+        }
+    }
+    
+    private func prepareChartData() -> [(key: UUID, value: Double)] {
+        sensitivityData.sorted { $0.value > $1.value }
     }
 }
 
