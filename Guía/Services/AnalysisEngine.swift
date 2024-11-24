@@ -184,6 +184,11 @@ final class AnalysisEngine {
             }
         }
         
+        // Fix for incomplete criterion breakdown
+        for (j, criterion) in decision.criteria.enumerated() {
+            breakdownByCriteria[criterion.id] = weightedMatrix[i][j]
+        }
+        
         // Step 3: Determine ideal and negative-ideal solutions
         var idealSolution = Array(repeating: -Double.infinity, count: m)
         var negativeIdealSolution = Array(repeating: Double.infinity, count: m)

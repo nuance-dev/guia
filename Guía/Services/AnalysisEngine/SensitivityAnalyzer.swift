@@ -1,4 +1,5 @@
 import Foundation
+import Accelerate
 
 final class SensitivityAnalyzer {
     // MARK: - Properties
@@ -62,15 +63,49 @@ final class SensitivityAnalyzer {
         criterionIndex: Int,
         delta: Double
     ) -> [Double] {
-        // TODO: Implement weight modification logic
-        // Ensure weights still sum to 1.0
+        var modifiedWeights = originalWeights
+        let oldWeight = modifiedWeights[criterionIndex]
+        let newWeight = max(0.0, min(1.0, oldWeight + delta))
+        let weightDiff = newWeight - oldWeight
+        
+        // Distribute the weight difference proportionally among other criteria
+        let remainingIndices = Array(0..<modifiedWeights.count).filter { $0 != criterionIndex }
+        let totalRemainingWeight = remainingIndices.reduce(0.0) { $0 + modifiedWeights[$1] }
+        
+        for index in remainingIndices {
+            let proportion = modifiedWeights[index] / totalRemainingWeight
+            modifiedWeights[index] -= weightDiff * proportion
+        }
+        
+        modifiedWeights[criterionIndex] = newWeight
+        
+        return modifiedWeights
     }
     
     private func calculateNewScores(
         optionScores: [[Double]],
         weights: [Double]
     ) -> [Double] {
-        // TODO: Implement score recalculation
+        let n = optionScores.count
+        var finalScores = [Double](repeating: 0.0, count: n)
+        
+        // Convert 2D array to row-major format for BLAS
+        let flattenedScores = optionScores.flatMap { $0 }
+        
+        // Use Accelerate framework for matrix-vector multiplication
+        vDSP_mmulD(flattenedScores, 1,
+                   weights, 1,
+                   &finalScores, 1,
+                   UInt(n), 1, UInt(weights.count))
+        
+        // Normalize scores to [0,1] range
+        let maxScore = finalScores.max() ?? 1.0
+        vDSP_vsdivD(finalScores, 1, 
+                    [maxScore], 
+                    &finalScores, 1, 
+                    UInt(finalScores.count))
+        
+        return finalScores
     }
     
     private func calculateSensitivityMetrics(
