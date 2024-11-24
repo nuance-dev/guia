@@ -139,3 +139,15 @@ struct CriterionWeightRow: View {
         )
     }
 }
+
+struct ValidationMessage: View {
+    let isValid: Bool
+    let message: String
+    
+    var body: some View {
+        Text(message)
+            .font(.caption)
+            .foregroundColor(isValid ? .green : .red)
+            .opacity(0.8)
+    }
+}

@@ -111,6 +111,40 @@ final class AHPAnalyzer {
         
         return ci / ri
     }
+    
+    private func validateMatrices(criteriaCount: Int, 
+                                 pairwiseMatrix: [[Double]], 
+                                 optionsMatrix: [[[Double]]]) throws {
+        // Validate pairwise matrix dimensions
+        guard pairwiseMatrix.count == criteriaCount,
+              pairwiseMatrix.allSatisfy({ $0.count == criteriaCount }) else {
+            throw AHPError.invalidMatrixSize
+        }
+        
+        // Validate options matrix dimensions
+        guard optionsMatrix.count == criteriaCount,
+              optionsMatrix.allSatisfy({ matrix in
+                  let optionCount = matrix.count
+                  return matrix.allSatisfy { $0.count == optionCount }
+              }) else {
+            throw AHPError.invalidMatrixSize
+        }
+    }
+    
+    private func calculateFinalScores(criteriaWeights: [Double], 
+                                    optionScores: [[Double]]) -> [Double] {
+        let optionCount = optionScores[0].count
+        var finalScores = [Double](repeating: 0.0, count: optionCount)
+        
+        // Matrix multiplication: optionScores * criteriaWeights
+        for i in 0..<optionCount {
+            for j in 0..<criteriaWeights.count {
+                finalScores[i] += optionScores[j][i] * criteriaWeights[j]
+            }
+        }
+        
+        return finalScores
+    }
 }
 
 // MARK: - AHP Results

@@ -29,10 +29,57 @@ final class DecisionStore {
         return entity.toDomain()
     }
     
-    func updateDecision(_ decision: Decision) async throws
-    func deleteDecision(id: NSManagedObjectID) async throws
+    func updateDecision(_ decision: Decision) async throws {
+        try await backgroundContext.perform {
+            guard let entity = try self.backgroundContext.existingObject(with: decision.id) as? DecisionEntity else {
+                throw StoreError.updateFailed
+            }
+            entity.configure(with: decision)
+            try self.backgroundContext.save()
+        }
+    }
+    
+    func deleteDecision(id: NSManagedObjectID) async throws {
+        try await backgroundContext.perform {
+            guard let entity = try self.backgroundContext.existingObject(with: id) as? DecisionEntity else {
+                throw StoreError.deleteFailed
+            }
+            self.backgroundContext.delete(entity)
+            try self.backgroundContext.save()
+        }
+    }
     
     // MARK: - Batch Operations
-    func batchDeleteDecisions(before date: Date) async throws
-    func batchUpdateDecisionStatus(ids: [NSManagedObjectID], status: Decision.Status) async throws
+    func batchDeleteDecisions(before date: Date) async throws {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "DecisionEntity")
+        fetchRequest.predicate = NSPredicate(format: "createdAt < %@", date as NSDate)
+        
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        deleteRequest.resultType = .resultTypeObjectIDs
+        
+        try await backgroundContext.perform {
+            guard let result = try self.backgroundContext.execute(deleteRequest) as? NSBatchDeleteResult,
+                  let objectIDs = result.result as? [NSManagedObjectID] else {
+                throw StoreError.batchDeleteFailed
+            }
+            
+            // Sync changes with view context
+            NSManagedObjectContext.mergeChanges(
+                fromRemoteContextSave: [NSDeletedObjectsKey: objectIDs],
+                into: [self.viewContext]
+            )
+        }
+    }
+    
+    func batchUpdateDecisionStatus(ids: [NSManagedObjectID], status: Decision.Status) async throws {
+        try await backgroundContext.perform {
+            let fetchRequest = NSFetchRequest<DecisionEntity>(entityName: "DecisionEntity")
+            fetchRequest.predicate = NSPredicate(format: "SELF IN %@", ids)
+            
+            let entities = try self.backgroundContext.fetch(fetchRequest)
+            entities.forEach { $0.status = status.rawValue }
+            
+            try self.backgroundContext.save()
+        }
+    }
 }

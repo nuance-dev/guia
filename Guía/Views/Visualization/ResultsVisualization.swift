@@ -103,21 +103,16 @@ private struct CriteriaRadarChart: View {
     var body: some View {
         VStack {
             ZStack {
+                radarChartBackground
+                
                 ForEach(results.rankedOptions) { option in
-                    Path { path in
-                        let points = calculateRadarPoints(for: option)
-                        for (index, point) in points.enumerated() {
-                            if index == 0 {
-                                path.move(to: point)
-                            } else {
-                                path.addLine(to: point)
-                            }
-                        }
-                        path.closeSubpath()
-                    }
-                    .fill(Color.accentColor.opacity(0.1))
-                    .stroke(Color.accentColor, lineWidth: 1)
-                    .opacity(selectedOption == nil || selectedOption?.id == option.id ? 1 : 0.2)
+                    RadarShape(points: calculateRadarPoints(for: option))
+                        .fill(Color.accentColor.opacity(0.1))
+                        .overlay(
+                            RadarShape(points: calculateRadarPoints(for: option))
+                                .stroke(Color.accentColor, lineWidth: 1)
+                        )
+                        .opacity(selectedOption == nil || selectedOption?.id == option.id ? 1 : 0.2)
                 }
             }
             .frame(height: 300)
@@ -152,9 +147,84 @@ private struct CriteriaRadarChart: View {
     }
     
     private func calculateRadarPoints(for option: AnalysisResults.RankedOption) -> [CGPoint] {
-        // Implementation for calculating radar chart points
-        // This would convert the option's criteria scores into points on a radar/spider chart
-        []  // Placeholder - actual implementation would return array of CGPoints
+        let center = CGPoint(x: 150, y: 150) // Center of the chart
+        let radius: CGFloat = 130
+        let criteriaCount = results.criteria.count
+        
+        guard criteriaCount > 0 else { return [] }
+        
+        return results.criteria.enumerated().map { index, criterion in
+            // Calculate angle for this criterion (2π divided by number of criteria)
+            let angle = (2 * .pi * Double(index) / Double(criteriaCount)) - (.pi / 2)
+            
+            // Get the score for this criterion (normalized between 0 and 1)
+            let score = option.criteriaScores[criterion.id] ?? 0
+            
+            // Convert polar coordinates to Cartesian coordinates
+            let x = center.x + radius * CGFloat(score) * cos(angle)
+            let y = center.y + radius * CGFloat(score) * sin(angle)
+            
+            return CGPoint(x: x, y: y)
+        }
+    }
+    
+    // Add axis lines and labels
+    private var radarChartBackground: some View {
+        GeometryReader { geometry in
+            let center = CGPoint(x: geometry.size.width/2, y: geometry.size.height/2)
+            let radius: CGFloat = min(geometry.size.width, geometry.size.height)/2 - 20
+            let criteriaCount = results.criteria.count
+            
+            ZStack {
+                // Draw axis lines
+                ForEach(0..<criteriaCount, id: \.self) { index in
+                    let angle = (2 * .pi * Double(index) / Double(criteriaCount)) - (.pi / 2)
+                    Path { path in
+                        path.move(to: center)
+                        path.addLine(to: CGPoint(
+                            x: center.x + radius * cos(angle),
+                            y: center.y + radius * sin(angle)
+                        ))
+                    }
+                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                    
+                    // Add criterion label
+                    Text(results.criteria[index].name)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .position(
+                            x: center.x + (radius + 20) * cos(angle),
+                            y: center.y + (radius + 20) * sin(angle)
+                        )
+                }
+                
+                // Draw concentric circles
+                ForEach(0..<5) { i in
+                    Circle()
+                        .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
+                        .frame(width: radius * 2 * CGFloat(i+1) / 5)
+                }
+            }
+        }
+    }
+}
+
+// Add RadarShape struct
+struct RadarShape: Shape {
+    let points: [CGPoint]
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        guard !points.isEmpty else { return path }
+        
+        path.move(to: points[0])
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+        path.closeSubpath()
+        
+        return path
     }
 }
 

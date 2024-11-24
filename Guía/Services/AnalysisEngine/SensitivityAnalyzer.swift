@@ -112,49 +112,69 @@ final class SensitivityAnalyzer {
         criterion: Criterion,
         variations: [WeightVariation]
     ) -> CriterionSensitivity {
-        // TODO: Implement sensitivity metrics calculation
+        // Calculate baseline rankings
+        let baselineRankings = analyzer.calculateRankings()
+        
+        var sensitivityScores: [Double] = []
+        var rankingChanges: [WeightVariationImpact] = []
+        
+        // Analyze each weight variation
+        for variation in variations {
+            // Create a temporary copy of weights with the variation applied
+            var modifiedWeights = criterion.weights
+            modifiedWeights[variation.criterionIndex] *= (1.0 + variation.delta)
+            
+            // Normalize modified weights
+            let sum = modifiedWeights.reduce(0, +)
+            modifiedWeights = modifiedWeights.map { $0 / sum }
+            
+            // Calculate new rankings with modified weights
+            let newRankings = analyzer.calculateRankings(withModifiedWeights: modifiedWeights)
+            
+            // Calculate ranking stability score (0-1, where 1 means no change)
+            let stabilityScore = calculateStabilityScore(
+                original: baselineRankings,
+                modified: newRankings
+            )
+            sensitivityScores.append(stabilityScore)
+            
+            // Record if this variation caused any rank changes
+            if stabilityScore < 1.0 {
+                rankingChanges.append(WeightVariationImpact(
+                    variation: variation,
+                    originalRanking: baselineRankings,
+                    modifiedRanking: newRankings
+                ))
+            }
+        }
+        
+        return CriterionSensitivity(
+            criterionId: criterion.id,
+            sensitivityScore: sensitivityScores.reduce(0, +) / Double(sensitivityScores.count),
+            rankingChanges: rankingChanges
+        )
+    }
+    
+    private func calculateStabilityScore(original: [Double], modified: [Double]) -> Double {
+        var changes = 0
+        let n = original.count
+        
+        // Compare each pair of alternatives
+        for i in 0..<n {
+            for j in (i+1)..<n {
+                // Check if relative ranking between i and j changed
+                let originalComparison = original[i] > original[j]
+                let modifiedComparison = modified[i] > modified[j]
+                
+                if originalComparison != modifiedComparison {
+                    changes += 1
+                }
+            }
+        }
+        
+        // Calculate stability score (1 - normalized changes)
+        let maxPossibleChanges = (n * (n - 1)) / 2
+        return 1.0 - (Double(changes) / Double(maxPossibleChanges))
     }
 }
 
-// MARK: - Sensitivity Results
-struct SensitivityResults {
-    let criterionSensitivities: [CriterionSensitivity]
-    let criticalCriteria: [Criterion]
-}
-
-struct CriterionSensitivity {
-    let criterion: Criterion
-    let elasticity: Double
-    let rankReversals: [RankReversal]
-    let stabilityIndex: Double
-}
-
-struct RankReversal {
-    let option1: Option
-    let option2: Option
-    let weightThreshold: Double
-}
-
-struct SensitivityData: Codable {
-    // Criteria weight sensitivity (how much ranking changes with weight changes)
-    var weightSensitivity: [UUID: Double]
-    
-    // Option score sensitivity (how much ranking changes with score changes)
-    var scoreSensitivity: [UUID: Double]
-    
-    // Overall stability index (0-1, higher means more stable)
-    var stabilityIndex: Double
-    
-    // Critical criteria that most affect the decision
-    var criticalCriteria: [UUID]
-    
-    // Switching points where rankings would change
-    var switchingPoints: [SwitchingPoint]
-    
-    struct SwitchingPoint: Codable {
-        let criterionId: UUID
-        let currentWeight: Double
-        let switchingWeight: Double
-        let affectedOptions: (UUID, UUID) // The pair of options that would switch ranks
-    }
-}

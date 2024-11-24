@@ -14,6 +14,22 @@ struct Decision: Identifiable, Codable {
     // MARK: - Analysis Results
     var analysisResults: AnalysisResults?
     
+    var state: DecisionState {
+        if options.isEmpty || criteria.isEmpty {
+            return .empty
+        }
+        if !validateWeights() || !validateAllScores() {
+            return .incomplete
+        }
+        return analysisResults == nil ? .ready : .analyzed
+    }
+    
+    private func validateAllScores() -> Bool {
+        options.allSatisfy { option in
+            option.validateScores(against: criteria)
+        }
+    }
+    
     // MARK: - Initialize
     init(id: UUID = UUID(),
          title: String,
@@ -63,7 +79,16 @@ struct Decision: Identifiable, Codable {
     }
     
     // MARK: - Analysis Methods
+    private var lastAnalysisMethod: AnalysisMethod?
+    
     mutating func calculateResults(using method: AnalysisMethod) async throws {
+        // Skip if already calculated with same method
+        if let lastMethod = lastAnalysisMethod,
+           lastMethod == method,
+           analysisResults != nil {
+            return
+        }
+        
         guard validateWeights() else {
             throw AnalysisError.insufficientData
         }
@@ -77,6 +102,76 @@ struct Decision: Identifiable, Codable {
         
         let engine = AnalysisEngine()
         analysisResults = try await engine.analyze(decision: self, method: method)
+        lastAnalysisMethod = method
         modified = Date()
+    }
+    
+    mutating func updateWeight(for criterionId: UUID, to value: Double) {
+        weights[criterionId] = value
+        modified = Date()
+        // Reset analysis when weights change
+        analysisResults = nil
+    }
+    
+    mutating func distributeWeightsEvenly() {
+        guard !criteria.isEmpty else { return }
+        let evenWeight = 1.0 / Double(criteria.count)
+        criteria.forEach { criterion in
+            weights[criterion.id] = evenWeight
+        }
+        modified = Date()
+        analysisResults = nil
+    }
+    
+    struct Snapshot: Codable {
+        let weights: [UUID: Double]
+        let options: [Option]
+        let timestamp: Date
+    }
+    
+    func createSnapshot() -> Snapshot {
+        Snapshot(
+            weights: weights,
+            options: options,
+            timestamp: Date()
+        )
+    }
+    
+    mutating func restore(from snapshot: Snapshot) {
+        weights = snapshot.weights
+        options = snapshot.options
+        modified = Date()
+        analysisResults = nil
+        lastAnalysisMethod = nil
+    }
+    
+    struct Progress {
+        let criteriaComplete: Bool
+        let optionsComplete: Bool
+        let weightsComplete: Bool
+        let percentage: Double
+        
+        var isComplete: Bool {
+            criteriaComplete && optionsComplete && weightsComplete
+        }
+    }
+    
+    var progress: Progress {
+        let hasValidCriteria = !criteria.isEmpty
+        let hasValidOptions = !options.isEmpty
+        let hasValidWeights = validateWeights()
+        
+        let total = 3.0
+        var completed = 0.0
+        if hasValidCriteria { completed += 1 }
+        if hasValidOptions { completed += 1 }
+        if hasValidWeights { completed += 1 }
+        
+        return Progress(
+            criteriaComplete: hasValidCriteria,
+            optionsComplete: hasValidOptions,
+            weightsComplete: hasValidWeights,
+            percentage: completed / total
+        )
     }
 }
