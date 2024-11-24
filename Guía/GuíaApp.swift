@@ -1,7 +1,6 @@
 import SwiftUI
 import AppKit
 
-@main
 struct GuíaApp: App {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @StateObject private var menuBarController = MenuBarController()

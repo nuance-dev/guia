@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Sensitivity Data
 struct SensitivityData: Codable {
     var weightSensitivity: [UUID: Double] // Criteria ID to sensitivity score
-    var scoreSensitivity: [UUID: Double]  // Option ID to sensitivity score
+    let scoreSensitivity: [UUID: Double]  // Option ID to sensitivity score
     var stabilityIndex: Double            // Overall stability of the analysis
     var criticalCriteria: [UUID]          // Critical criteria that most affect the decision
     var switchingPoints: [SwitchingPoint]   // Switching points where rankings would change
@@ -12,8 +12,17 @@ struct SensitivityData: Codable {
         let criterionId: UUID
         let currentWeight: Double
         let switchingWeight: Double
-        let affectedOptions: (first: UUID, second: UUID) // The pair of options that would switch ranks
+        let affectedOptions: (UUID, UUID)
         
+        // Add regular initializer
+        init(criterionId: UUID, currentWeight: Double, switchingWeight: Double, affectedOptions: (UUID, UUID)) {
+            self.criterionId = criterionId
+            self.currentWeight = currentWeight
+            self.switchingWeight = switchingWeight
+            self.affectedOptions = affectedOptions
+        }
+        
+        // Keep existing Codable implementation
         enum CodingKeys: String, CodingKey {
             case criterionId
             case currentWeight
@@ -27,7 +36,7 @@ struct SensitivityData: Codable {
             try container.encode(criterionId, forKey: .criterionId)
             try container.encode(currentWeight, forKey: .currentWeight)
             try container.encode(switchingWeight, forKey: .switchingWeight)
-            try container.encode([affectedOptions.first, affectedOptions.second], forKey: .affectedOptions)
+            try container.encode([affectedOptions.0, affectedOptions.1], forKey: .affectedOptions)
         }
         
         // Custom decoding for tuple

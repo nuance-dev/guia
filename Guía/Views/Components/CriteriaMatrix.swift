@@ -4,7 +4,7 @@ struct CriteriaMatrix: View {
     // MARK: - Properties
     @Binding var criteria: [Criterion]
     @Binding var pairwiseComparisons: [[Double]]
-    @Environment(\.isAdvancedMode) var isAdvancedMode
+    @Environment(\.isAdvancedMode) private var isAdvancedMode: Bool
     
     // MARK: - Body
     var body: some View {
@@ -24,7 +24,7 @@ struct CriteriaMatrix: View {
                 // Header Row
                 GridRow {
                     Color.clear
-                        .gridCellUnsizedAxes([.horizontal, .vertical])
+                        .gridCellUnsizedAxes([.horizontal])
                     ForEach(criteria) { criterion in
                         Text(criterion.name)
                             .font(.caption)
@@ -35,18 +35,21 @@ struct CriteriaMatrix: View {
                 }
                 
                 // Matrix Rows
-                ForEach(Array(criteria.enumerated()), id: \.element.id) { i, rowCriterion in
+                ForEach(criteria) { rowCriterion in
                     GridRow {
                         Text(rowCriterion.name)
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .frame(width: 100, alignment: .leading)
                         
-                        ForEach(Array(criteria.enumerated()), id: \.element.id) { j, _ in
-                            ComparisonCell(
-                                value: $pairwiseComparisons[i][j],
-                                isEditable: i != j
-                            )
+                        ForEach(criteria) { columnCriterion in
+                            if let i = criteria.firstIndex(where: { $0.id == rowCriterion.id }),
+                               let j = criteria.firstIndex(where: { $0.id == columnCriterion.id }) {
+                                ComparisonCell(
+                                    value: $pairwiseComparisons[i][j],
+                                    isEditable: rowCriterion.id != columnCriterion.id
+                                )
+                            }
                         }
                     }
                 }

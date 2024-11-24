@@ -1,6 +1,26 @@
 import Foundation
 import Accelerate
 
+struct WeightVariation {
+    let delta: Double
+    let scores: [Double]
+    let criterionIndex: Int
+}
+
+struct WeightVariationImpact {
+    let variation: WeightVariation
+    let originalRanking: [Double]
+    let modifiedRanking: [Double]
+}
+
+// Move this outside the class, at file scope level
+private extension ClosedRange where Bound == Double {
+    func interpolated(step: Int, steps: Int) -> Double {
+        let progress = Double(step) / Double(steps)
+        return lowerBound + (upperBound - lowerBound) * progress
+    }
+}
+
 final class SensitivityAnalyzer {
     // MARK: - Properties
     private let ahpAnalyzer: AHPAnalyzer
@@ -36,8 +56,9 @@ final class SensitivityAnalyzer {
                 
                 weightVariations.append(
                     WeightVariation(
-                        weightDelta: delta,
-                        scores: newScores
+                        delta: delta,
+                        scores: newScores,
+                        criterionIndex: criterionIndex
                     )
                 )
             }
@@ -113,45 +134,49 @@ final class SensitivityAnalyzer {
         variations: [WeightVariation]
     ) -> CriterionSensitivity {
         // Calculate baseline rankings
-        let baselineRankings = analyzer.calculateRankings()
+        let baselineScores = variations.first?.scores ?? []
         
         var sensitivityScores: [Double] = []
-        var rankingChanges: [WeightVariationImpact] = []
+        var rankReversals: [RankReversal] = []
         
         // Analyze each weight variation
         for variation in variations {
-            // Create a temporary copy of weights with the variation applied
-            var modifiedWeights = criterion.weights
-            modifiedWeights[variation.criterionIndex] *= (1.0 + variation.delta)
-            
-            // Normalize modified weights
-            let sum = modifiedWeights.reduce(0, +)
-            modifiedWeights = modifiedWeights.map { $0 / sum }
-            
-            // Calculate new rankings with modified weights
-            let newRankings = analyzer.calculateRankings(withModifiedWeights: modifiedWeights)
-            
             // Calculate ranking stability score (0-1, where 1 means no change)
             let stabilityScore = calculateStabilityScore(
-                original: baselineRankings,
-                modified: newRankings
+                original: baselineScores,
+                modified: variation.scores
             )
             sensitivityScores.append(stabilityScore)
             
-            // Record if this variation caused any rank changes
+            // Record rank reversals if any occurred
             if stabilityScore < 1.0 {
-                rankingChanges.append(WeightVariationImpact(
-                    variation: variation,
-                    originalRanking: baselineRankings,
-                    modifiedRanking: newRankings
-                ))
+                // Find pairs of options that switched ranks
+                for i in 0..<baselineScores.count {
+                    for j in (i+1)..<baselineScores.count {
+                        if (baselineScores[i] > baselineScores[j]) != 
+                           (variation.scores[i] > variation.scores[j]) {
+                            rankReversals.append(RankReversal(
+                                option1: Option(id: UUID(), name: "Option \(i)"),
+                                option2: Option(id: UUID(), name: "Option \(j)"),
+                                weightThreshold: variation.delta
+                            ))
+                        }
+                    }
+                }
             }
         }
         
+        // Calculate elasticity as average sensitivity
+        let elasticity = sensitivityScores.reduce(0, +) / Double(sensitivityScores.count)
+        
+        // Calculate stability index (inverse of elasticity)
+        let stabilityIndex = 1.0 - elasticity
+        
         return CriterionSensitivity(
-            criterionId: criterion.id,
-            sensitivityScore: sensitivityScores.reduce(0, +) / Double(sensitivityScores.count),
-            rankingChanges: rankingChanges
+            criterion: criterion,
+            elasticity: elasticity,
+            rankReversals: rankReversals,
+            stabilityIndex: stabilityIndex
         )
     }
     
@@ -180,26 +205,6 @@ final class SensitivityAnalyzer {
     // Add initializer
     init(ahpAnalyzer: AHPAnalyzer = AHPAnalyzer()) {
         self.ahpAnalyzer = ahpAnalyzer
-    }
-    
-    // Add missing types
-    private struct WeightVariation {
-        let delta: Double
-        let scores: [Double]
-    }
-    
-    private struct WeightVariationImpact {
-        let variation: WeightVariation
-        let originalRanking: [Double]
-        let modifiedRanking: [Double]
-    }
-    
-    // Add extension for interpolation
-    private extension ClosedRange where Bound == Double {
-        func interpolated(step: Int, steps: Int) -> Double {
-            let progress = Double(step) / Double(steps)
-            return lowerBound + (upperBound - lowerBound) * progress
-        }
     }
     
     // Add missing method

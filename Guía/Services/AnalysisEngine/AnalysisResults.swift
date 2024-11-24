@@ -11,8 +11,23 @@ struct AnalysisResults: Codable {
         let id: UUID
         let optionId: UUID
         let score: Double
-        let rank: Int
+        var rank: Int
         var breakdownByCriteria: [UUID: Double]
+        
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case optionId
+            case score
+            case rank
+            case breakdownByCriteria
+        }
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case rankedOptions
+        case confidenceScore
+        case sensitivityData
+        case method
     }
 }
 

@@ -1,8 +1,10 @@
 import Foundation
+import CoreData
 
 // MARK: - Decision Model
 struct Decision: Identifiable, Codable {
     let id: UUID
+    let objectID: NSManagedObjectID?
     var title: String
     var description: String?
     var options: [Option]
@@ -32,23 +34,25 @@ struct Decision: Identifiable, Codable {
     
     // MARK: - Initialize
     init(id: UUID = UUID(),
+         objectID: NSManagedObjectID? = nil,
          title: String,
          description: String? = nil,
          options: [Option] = [],
-         criteria: [Criterion] = []) {
+         criteria: [Criterion] = [],
+         weights: [UUID: Double] = [:],
+         created: Date = Date(),
+         modified: Date = Date(),
+         analysisResults: AnalysisResults? = nil) {
         self.id = id
+        self.objectID = objectID
         self.title = title
         self.description = description
         self.options = options
         self.criteria = criteria
-        self.weights = [:]
-        self.created = Date()
-        self.modified = Date()
-        
-        // Initialize weights from criteria
-        for criterion in criteria {
-            self.weights[criterion.id] = criterion.effectiveWeight
-        }
+        self.weights = weights
+        self.created = created
+        self.modified = modified
+        self.analysisResults = analysisResults
     }
     
     // MARK: - Helper Methods
@@ -174,4 +178,63 @@ struct Decision: Identifiable, Codable {
             percentage: completed / total
         )
     }
+    
+    enum CodingKeys: CodingKey {
+        case id
+        case title
+        case description
+        case options
+        case criteria
+        case weights
+        case created
+        case modified
+        case analysisResults
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        objectID = nil // NSManagedObjectID is not codable, set to nil when decoding
+        title = try container.decode(String.self, forKey: .title)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        options = try container.decode([Option].self, forKey: .options)
+        criteria = try container.decode([Criterion].self, forKey: .criteria)
+        weights = try container.decode([UUID: Double].self, forKey: .weights)
+        created = try container.decode(Date.self, forKey: .created)
+        modified = try container.decode(Date.self, forKey: .modified)
+        analysisResults = try container.decodeIfPresent(AnalysisResults.self, forKey: .analysisResults)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(options, forKey: .options)
+        try container.encode(criteria, forKey: .criteria)
+        try container.encode(weights, forKey: .weights)
+        try container.encode(created, forKey: .created)
+        try container.encode(modified, forKey: .modified)
+        try container.encodeIfPresent(analysisResults, forKey: .analysisResults)
+    }
+}
+
+enum DecisionState: String, Codable {
+    case empty
+    case incomplete
+    case ready
+    case analyzed
+}
+
+private enum CodingKeys: String, CodingKey {
+    case id
+    case objectID
+    case title
+    case description
+    case options
+    case criteria
+    case weights
+    case created
+    case modified
+    case analysisResults
 }

@@ -31,19 +31,27 @@ final class DecisionStore {
     
     func updateDecision(_ decision: Decision) async throws {
         try await backgroundContext.perform {
-            guard let entity = try self.backgroundContext.existingObject(with: decision.id) as? DecisionEntity else {
+            let fetchRequest = NSFetchRequest<DecisionEntity>(entityName: "DecisionEntity")
+            fetchRequest.predicate = NSPredicate(format: "id == %@", decision.id as CVarArg)
+            
+            guard let entity = try self.backgroundContext.fetch(fetchRequest).first else {
                 throw StoreError.updateFailed
             }
+            
             entity.configure(with: decision)
             try self.backgroundContext.save()
         }
     }
     
-    func deleteDecision(id: NSManagedObjectID) async throws {
+    func deleteDecision(withId id: UUID) async throws {
         try await backgroundContext.perform {
-            guard let entity = try self.backgroundContext.existingObject(with: id) as? DecisionEntity else {
+            let fetchRequest = NSFetchRequest<DecisionEntity>(entityName: "DecisionEntity")
+            fetchRequest.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            
+            guard let entity = try self.backgroundContext.fetch(fetchRequest).first else {
                 throw StoreError.deleteFailed
             }
+            
             self.backgroundContext.delete(entity)
             try self.backgroundContext.save()
         }
@@ -71,13 +79,15 @@ final class DecisionStore {
         }
     }
     
-    func batchUpdateDecisionStatus(ids: [NSManagedObjectID], status: Decision.Status) async throws {
+    func batchUpdateDecisionStatus(ids: [NSManagedObjectID], status: DecisionState) async throws {
         try await backgroundContext.perform {
             let fetchRequest = NSFetchRequest<DecisionEntity>(entityName: "DecisionEntity")
-            fetchRequest.predicate = NSPredicate(format: "SELF IN %@", ids)
+            fetchRequest.predicate = NSPredicate(format: "id IN %@", ids)
             
-            let entities = try self.backgroundContext.fetch(fetchRequest)
-            entities.forEach { $0.status = status.rawValue }
+            let decisions = try self.backgroundContext.fetch(fetchRequest)
+            for decision in decisions {
+                decision.status = status.rawValue
+            }
             
             try self.backgroundContext.save()
         }

@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Analysis Method
-enum AnalysisMethod {
+enum AnalysisMethod: String, Codable {
     case simple // Weighted sum
     case ahp    // Analytic Hierarchy Process
     case topsis // TOPSIS method
@@ -13,8 +13,8 @@ final class AnalysisEngine {
     private let ahpAnalyzer: AHPAnalyzer
     
     // MARK: - Initialize
-    init(ahpAnalyzer: AHPAnalyzer = AHPAnalyzer()) {
-        self.ahpAnalyzer = ahpAnalyzer
+    init() {
+        self.ahpAnalyzer = AHPAnalyzer()
     }
     
     // MARK: - Public Methods
@@ -62,7 +62,7 @@ final class AnalysisEngine {
             rankedOptions[index].rank = index + 1
         }
         
-        return AnalysisResults(
+        return try await AnalysisResults(
             rankedOptions: rankedOptions,
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
@@ -110,7 +110,7 @@ final class AnalysisEngine {
             rankedOptions[index].rank = index + 1
         }
         
-        return AnalysisResults(
+        return try await AnalysisResults(
             rankedOptions: rankedOptions,
             confidenceScore: 1.0 - ahpResults.consistencyRatio,
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
@@ -184,11 +184,6 @@ final class AnalysisEngine {
             }
         }
         
-        // Fix for incomplete criterion breakdown
-        for (j, criterion) in decision.criteria.enumerated() {
-            breakdownByCriteria[criterion.id] = weightedMatrix[i][j]
-        }
-        
         // Step 3: Determine ideal and negative-ideal solutions
         var idealSolution = Array(repeating: -Double.infinity, count: m)
         var negativeIdealSolution = Array(repeating: Double.infinity, count: m)
@@ -235,7 +230,7 @@ final class AnalysisEngine {
             rankedOptions[index].rank = index + 1
         }
         
-        return AnalysisResults(
+        return try await AnalysisResults(
             rankedOptions: rankedOptions,
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
@@ -261,9 +256,9 @@ final class AnalysisEngine {
         return min(1.0, avgDiff / (range / Double(rankedOptions.count)))
     }
     
-    private func calculateSensitivityData(_ decision: Decision, _ rankedOptions: [AnalysisResults.RankedOption]) -> SensitivityData {
+    private func calculateSensitivityData(_ decision: Decision, _ rankedOptions: [AnalysisResults.RankedOption]) async throws -> SensitivityData {
         var weightSensitivity: [UUID: Double] = [:]
-        var scoreSensitivity: [UUID: Double] = [:]
+        let scoreSensitivity: [UUID: Double] = [:]
         var criticalCriteria: [UUID] = []
         var switchingPoints: [SensitivityData.SwitchingPoint] = []
         
@@ -272,43 +267,43 @@ final class AnalysisEngine {
             let baseRanking = rankedOptions.map { $0.optionId }
             var sensitivityScore = 0.0
             
-            // Test weight perturbations (-10% to +10%)
+            // Test weight perturbations
             for delta in [-0.1, -0.05, 0.05, 0.1] {
                 var modifiedWeights = decision.weights
-                let originalWeight = modifiedWeights[criterion.id] ?? 0
+                let originalWeight = modifiedWeights[criterion.id] ?? 0.0
                 modifiedWeights[criterion.id] = max(0, min(1, originalWeight * (1 + delta)))
                 
-                // Recalculate rankings with modified weight
-                let modifiedResults = try? performTemporaryAnalysis(
-                    decision: decision,
-                    modifiedWeights: modifiedWeights
-                )
-                
-                if let modifiedRanking = modifiedResults?.rankedOptions.map({ $0.optionId }),
-                   baseRanking != modifiedRanking {
-                    sensitivityScore += abs(delta)
+                do {
+                    let modifiedResults = try await performTemporaryAnalysis(
+                        decision: decision,
+                        modifiedWeights: modifiedWeights
+                    )
+                    let modifiedRanking = modifiedResults.rankedOptions.map { $0.optionId }
                     
-                    // Record switching point if found
-                    if let switchPoint = findSwitchingPoint(
-                        criterion: criterion,
-                        originalWeight: originalWeight,
-                        baseRanking: baseRanking,
-                        modifiedRanking: modifiedRanking
-                    ) {
-                        switchingPoints.append(switchPoint)
+                    if baseRanking != modifiedRanking {
+                        sensitivityScore += abs(delta)
+                        
+                        if let switchPoint = try await findSwitchingPoint(
+                            criterion: criterion,
+                            originalWeight: originalWeight,
+                            baseRanking: baseRanking,
+                            modifiedRanking: modifiedRanking
+                        ) {
+                            switchingPoints.append(switchPoint)
+                        }
                     }
+                } catch {
+                    continue // Skip failed analysis attempts
                 }
             }
             
             weightSensitivity[criterion.id] = sensitivityScore
             
-            // Identify critical criteria
-            if sensitivityScore > 0.15 { // Threshold for critical criteria
+            if sensitivityScore > 0.15 {
                 criticalCriteria.append(criterion.id)
             }
         }
         
-        // Calculate stability index (inverse of average sensitivity)
         let avgSensitivity = weightSensitivity.values.reduce(0.0, +) / Double(weightSensitivity.count)
         let stabilityIndex = 1.0 - min(1.0, avgSensitivity)
         
@@ -326,15 +321,14 @@ final class AnalysisEngine {
         originalWeight: Double,
         baseRanking: [UUID],
         modifiedRanking: [UUID]
-    ) -> SensitivityData.SwitchingPoint? {
-        // Find the first pair of options that switched positions
+    ) async throws -> SensitivityData.SwitchingPoint? {
         for (i, optionId) in baseRanking.enumerated() {
             if let newPosition = modifiedRanking.firstIndex(of: optionId),
                newPosition != i {
                 return SensitivityData.SwitchingPoint(
                     criterionId: criterion.id,
                     currentWeight: originalWeight,
-                    switchingWeight: originalWeight * 1.1, // Approximate switching point
+                    switchingWeight: originalWeight * 1.1,
                     affectedOptions: (optionId, modifiedRanking[i])
                 )
             }
@@ -345,9 +339,9 @@ final class AnalysisEngine {
     private func performTemporaryAnalysis(
         decision: Decision,
         modifiedWeights: [UUID: Double]
-    ) throws -> AnalysisResults {
+    ) async throws -> AnalysisResults {
         var modifiedDecision = decision
         modifiedDecision.weights = modifiedWeights
-        return try await analyze(decision: modifiedDecision, method: .ahp)
+        return try await analyze(decision: modifiedDecision, method: .simple)
     }
 }
