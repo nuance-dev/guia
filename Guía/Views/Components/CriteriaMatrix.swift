@@ -4,15 +4,23 @@ struct CriteriaMatrix: View {
     // MARK: - Properties
     @Binding var criteria: [Criterion]
     @Binding var pairwiseComparisons: [[Double]]
-    @Environment(\.isAdvancedMode) private var isAdvancedMode: Bool
+    @Environment(\.isAdvancedMode) private var isAdvancedMode
+    
+    // MARK: - Initialize
+    init(criteria: Binding<[Criterion]>, pairwiseComparisons: Binding<[[Double]]>) {
+        self._criteria = criteria
+        self._pairwiseComparisons = pairwiseComparisons
+    }
     
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if isAdvancedMode {
-                ahpMatrixView
-            } else {
-                simpleWeightView
+            if let advanced = isAdvancedMode {
+                if advanced {
+                    ahpMatrixView
+                } else {
+                    simpleWeightView
+                }
             }
         }
     }

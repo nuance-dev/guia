@@ -99,6 +99,12 @@ final class DecisionViewModel: ObservableObject {
         }
     }
     
+    func updatePairwiseComparisons(_ comparisons: [[Double]]) async throws {
+        decision.pairwiseComparisons = comparisons
+        decision.modified = Date()
+        try await storageService.updateDecision(decision)
+    }
+    
     // MARK: - Analysis State
     enum AnalysisState {
         case idle

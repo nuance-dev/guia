@@ -12,6 +12,7 @@ public class DecisionEntity: NSManagedObject {
     @NSManaged public var criteriaData: Data?
     @NSManaged public var weightsData: Data?
     @NSManaged public var analysisResultsData: Data?
+    @NSManaged public var pairwiseComparisonsData: Data?
     
     func configure(with decision: Decision) {
         self.id = decision.id
@@ -27,6 +28,7 @@ public class DecisionEntity: NSManagedObject {
         self.criteriaData = try? encoder.encode(decision.criteria)
         self.weightsData = try? encoder.encode(decision.weights)
         self.analysisResultsData = try? encoder.encode(decision.analysisResults)
+        self.pairwiseComparisonsData = try? encoder.encode(decision.pairwiseComparisons)
     }
     
     func toDomain() -> Decision {
@@ -36,6 +38,7 @@ public class DecisionEntity: NSManagedObject {
         let criteria = (try? decoder.decode([Criterion].self, from: criteriaData ?? Data())) ?? []
         let weights = (try? decoder.decode([UUID: Double].self, from: weightsData ?? Data())) ?? [:]
         let results = try? decoder.decode(AnalysisResults.self, from: analysisResultsData ?? Data())
+        let pairwiseComparisons = try? decoder.decode([[Double]].self, from: pairwiseComparisonsData ?? Data())
         
         return Decision(
             id: id,
@@ -44,6 +47,7 @@ public class DecisionEntity: NSManagedObject {
             options: options,
             criteria: criteria,
             weights: weights,
+            pairwiseComparisons: pairwiseComparisons,
             created: createdAt,
             modified: modifiedAt,
             analysisResults: results

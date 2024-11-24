@@ -41,12 +41,27 @@ struct ContentView: View {
         }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar {
-            ToolbarItemGroup {
-                ButtonGroup(buttons: [
-                    ("New Option", "plus.circle", { showingNewOptionSheet = true }),
-                    ("New Criterion", "plus.square", { showingNewCriterionSheet = true }),
-                    ("Analyze", "chart.line.uptrend.xyaxis", analyze)
-                ])
+            ToolbarItemGroup(placement: .automatic) {
+                HStack(spacing: 16) {
+                    Button {
+                        showingNewOptionSheet = true
+                    } label: {
+                        Label("New Option", systemImage: "plus.circle")
+                    }
+                    
+                    Button {
+                        showingNewCriterionSheet = true
+                    } label: {
+                        Label("New Criterion", systemImage: "plus.square")
+                    }
+                    
+                    Button {
+                        analyze()
+                    } label: {
+                        Label("Analyze", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                }
+                .padding(.horizontal, 8)
             }
         }
         .sheet(isPresented: $showingNewOptionSheet) {
@@ -84,32 +99,52 @@ struct ContentView: View {
     }
     
     private var mainContent: some View {
-        Group {
-            switch selectedTab {
-            case .options:
-                OptionListView(options: .constant(decisionVM.decision.options))
-                    .navigationTitle("Options")
-            case .criteria:
-                CriteriaMatrix(
-                    criteria: .constant(decisionVM.decision.criteria),
-                    pairwiseComparisons: .constant([[1.0]])
-                )
-                .navigationTitle("Criteria")
-            case .analysis:
-                if let results = decisionVM.decision.analysisResults {
-                    ResultsVisualization(results: results)
-                        .navigationTitle("Analysis")
-                } else {
-                    ContentUnavailableView(
-                        "No Analysis Available",
-                        systemImage: "chart.bar",
-                        description: Text("Run analysis to see results")
+        NavigationStack {
+            Group {
+                switch selectedTab {
+                case .options:
+                    OptionListView(options: .init(
+                        get: { decisionVM.decision.options },
+                        set: { newOptions in
+                            Task {
+                                for option in newOptions {
+                                    try? await decisionVM.updateOption(option)
+                                }
+                            }
+                        }
+                    ))
+                    
+                case .criteria:
+                    CriteriaMatrix(
+                        criteria: .init(
+                            get: { decisionVM.decision.criteria },
+                            set: { newCriteria in
+                                Task {
+                                    for criterion in newCriteria {
+                                        try? await decisionVM.updateCriterion(criterion)
+                                    }
+                                }
+                            }
+                        ),
+                        pairwiseComparisons: .init(
+                            get: { decisionVM.decision.pairwiseComparisons ?? [] },
+                            set: { comparisons in
+                                Task {
+                                    try? await decisionVM.updatePairwiseComparisons(comparisons)
+                                }
+                            }
+                        )
                     )
+                    
+                case .analysis:
+                    if let results = decisionVM.decision.analysisResults {
+                        ResultsVisualization(results: results)
+                    } else {
+                        EmptyAnalysisView()
+                    }
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VisualEffectBlur(material: .contentBackground, blendingMode: .behindWindow))
     }
     
     private func analyze() {

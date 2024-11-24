@@ -10,6 +10,7 @@ struct Decision: Identifiable, Codable {
     var options: [Option]
     var criteria: [Criterion]
     var weights: [UUID: Double] // Criteria ID to weight mapping
+    var pairwiseComparisons: [[Double]]?
     var created: Date
     var modified: Date
     
@@ -40,6 +41,7 @@ struct Decision: Identifiable, Codable {
          options: [Option] = [],
          criteria: [Criterion] = [],
          weights: [UUID: Double] = [:],
+         pairwiseComparisons: [[Double]]? = nil,
          created: Date = Date(),
          modified: Date = Date(),
          analysisResults: AnalysisResults? = nil) {
@@ -50,6 +52,7 @@ struct Decision: Identifiable, Codable {
         self.options = options
         self.criteria = criteria
         self.weights = weights
+        self.pairwiseComparisons = pairwiseComparisons
         self.created = created
         self.modified = modified
         self.analysisResults = analysisResults
