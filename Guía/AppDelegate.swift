@@ -1,6 +1,5 @@
 import AppKit
 
-@main
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Configure any app-wide settings or services here

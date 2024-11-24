@@ -1,7 +1,9 @@
 import SwiftUI
 import AppKit
 
+@main
 struct GuíaApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("isDarkMode") private var isDarkMode = false
     @StateObject private var menuBarController = MenuBarController()
     @State private var showingUpdateSheet = false
@@ -17,10 +19,7 @@ struct GuíaApp: App {
                         .environmentObject(menuBarController)
                 }
                 .onAppear {
-                    // Check for updates when app launches
                     menuBarController.updater.checkForUpdates()
-                    
-                    // Set up observer for update availability
                     menuBarController.updater.onUpdateAvailable = {
                         showingUpdateSheet = true
                     }
