@@ -53,9 +53,13 @@ struct OptionListView: View {
     
     // MARK: - Private Methods
     private func duplicateOption(_ option: Option) {
-        var duplicate = option
-        duplicate.id = UUID()
-        duplicate.name += " (Copy)"
+        let duplicate = Option(
+            id: UUID(),
+            name: option.name + " (Copy)",
+            description: option.description,
+            scores: option.scores,
+            notes: option.notes
+        )
         options.append(duplicate)
     }
     

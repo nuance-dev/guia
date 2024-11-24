@@ -66,7 +66,8 @@ final class AnalysisEngine {
             rankedOptions: rankedOptions,
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
-            method: .simple
+            method: .simple,
+            criteria: decision.criteria
         )
     }
     

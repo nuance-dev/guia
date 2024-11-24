@@ -6,6 +6,7 @@ struct AnalysisResults: Codable {
     var confidenceScore: Double
     var sensitivityData: SensitivityData
     var method: AnalysisMethod
+    var criteria: [Criterion]
     
     struct RankedOption: Identifiable, Codable {
         let id: UUID
@@ -28,6 +29,7 @@ struct AnalysisResults: Codable {
         case confidenceScore
         case sensitivityData
         case method
+        case criteria
     }
 }
 

@@ -147,20 +147,16 @@ private struct CriteriaRadarChart: View {
     }
     
     private func calculateRadarPoints(for option: AnalysisResults.RankedOption) -> [CGPoint] {
-        let center = CGPoint(x: 150, y: 150) // Center of the chart
+        let center = CGPoint(x: 150, y: 150)
         let radius: CGFloat = 130
         let criteriaCount = results.criteria.count
         
         guard criteriaCount > 0 else { return [] }
         
         return results.criteria.enumerated().map { index, criterion in
-            // Calculate angle for this criterion (2π divided by number of criteria)
             let angle = (2 * .pi * Double(index) / Double(criteriaCount)) - (.pi / 2)
+            let score = option.breakdownByCriteria[criterion.id] ?? 0
             
-            // Get the score for this criterion (normalized between 0 and 1)
-            let score = option.criteriaScores[criterion.id] ?? 0
-            
-            // Convert polar coordinates to Cartesian coordinates
             let x = center.x + radius * CGFloat(score) * cos(angle)
             let y = center.y + radius * CGFloat(score) * sin(angle)
             
@@ -168,7 +164,6 @@ private struct CriteriaRadarChart: View {
         }
     }
     
-    // Add axis lines and labels
     private var radarChartBackground: some View {
         GeometryReader { geometry in
             let center = CGPoint(x: geometry.size.width/2, y: geometry.size.height/2)
@@ -176,7 +171,6 @@ private struct CriteriaRadarChart: View {
             let criteriaCount = results.criteria.count
             
             ZStack {
-                // Draw axis lines
                 ForEach(0..<criteriaCount, id: \.self) { index in
                     let angle = (2 * .pi * Double(index) / Double(criteriaCount)) - (.pi / 2)
                     Path { path in
@@ -188,7 +182,6 @@ private struct CriteriaRadarChart: View {
                     }
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                     
-                    // Add criterion label
                     Text(results.criteria[index].name)
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -198,7 +191,6 @@ private struct CriteriaRadarChart: View {
                         )
                 }
                 
-                // Draw concentric circles
                 ForEach(0..<5) { i in
                     Circle()
                         .stroke(Color.secondary.opacity(0.1), lineWidth: 1)

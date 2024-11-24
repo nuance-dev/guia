@@ -15,12 +15,10 @@ struct CriteriaMatrix: View {
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let advanced = isAdvancedMode {
-                if advanced {
-                    ahpMatrixView
-                } else {
-                    simpleWeightView
-                }
+            if isAdvancedMode {
+                ahpMatrixView
+            } else {
+                simpleWeightView
             }
         }
     }
