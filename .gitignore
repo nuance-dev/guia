@@ -1,0 +1,54 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.swiftpm/
+.idea/
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/xcshareddata/
+Guía.xcodeproj/project.xcworkspace/xcuserdata/joaquintournier.xcuserdatad/UserInterfaceState.xcuserstate
+Guía.xcodeproj/xcuserdata/joaquintournier.xcuserdatad/xcschemes/xcschememanagement.plist
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# Cocoapods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+*.ipa
+*.app.dSYM.zip
+*.app.zip
+
+# Code signing
+*.xcconfig
+*.mobileprovision
+*.cer
+*.p12
+
+# Temporary files
+*.tmp
+*.swp
+*.lock
+*~
+
+# Logs
+*.log
