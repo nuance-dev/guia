@@ -4,6 +4,7 @@ enum AnalysisError: LocalizedError {
     case invalidMatrixDimensions
     case insufficientData
     case calculationError(String)
+    case invalidWeights(String)
     
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum AnalysisError: LocalizedError {
             return "Insufficient data to perform analysis"
         case .calculationError(let message):
             return "Calculation error: \(message)"
+        case .invalidWeights(let message):
+            return "Invalid weights configuration: \(message)"
         }
     }
 }

@@ -1,156 +1,93 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var decisionVM = DecisionViewModel(
-        decision: Decision(
-            title: "New Decision",
-            description: "Make a better choice"
-        )
-    )
-    @State private var selectedTab = Tab.options
-    @State private var showingNewOptionSheet = false
-    @State private var showingNewCriterionSheet = false
+    @State private var decisions: [Decision] = []
+    @State private var showingNewDecisionSheet = false
     
-    enum Tab {
-        case options
-        case criteria
-        case analysis
-        
-        var title: String {
-            switch self {
-            case .options: return "Options"
-            case .criteria: return "Criteria"
-            case .analysis: return "Analysis"
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .options: return "list.bullet"
-            case .criteria: return "slider.horizontal.3"
-            case .analysis: return "chart.bar"
-            }
-        }
-    }
+    private let maxDecisions = 3
     
     var body: some View {
         NavigationView {
-            sidebar
-            
             mainContent
+                .frame(minWidth: 600, minHeight: 400)
+                .navigationTitle("Decisions")
+                .toolbar { toolbarContent }
         }
-        .frame(minWidth: 800, minHeight: 500)
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                HStack(spacing: 16) {
-                    Button {
-                        showingNewOptionSheet = true
-                    } label: {
-                        Label("New Option", systemImage: "plus.circle")
-                    }
-                    
-                    Button {
-                        showingNewCriterionSheet = true
-                    } label: {
-                        Label("New Criterion", systemImage: "plus.square")
-                    }
-                    
-                    Button {
-                        analyze()
-                    } label: {
-                        Label("Analyze", systemImage: "chart.line.uptrend.xyaxis")
-                    }
-                }
-                .padding(.horizontal, 8)
-            }
-        }
-        .sheet(isPresented: $showingNewOptionSheet) {
-            OptionEditView(mode: .add) { option in
-                Task {
-                    try? await decisionVM.addOption(option)
-                }
-            }
-        }
-        .sheet(isPresented: $showingNewCriterionSheet) {
-            CriterionEditView { criterion in
-                Task {
-                    try? await decisionVM.addCriterion(criterion)
+        .sheet(isPresented: $showingNewDecisionSheet) {
+            NewDecisionSheet { decision in
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    decisions.append(decision)
                 }
             }
         }
     }
     
-    private var sidebar: some View {
-        List(selection: $selectedTab) {
-            NavigationLink(value: Tab.options) {
-                Label("Options", systemImage: Tab.options.icon)
-            }
-            
-            NavigationLink(value: Tab.criteria) {
-                Label("Criteria", systemImage: Tab.criteria.icon)
-            }
-            
-            NavigationLink(value: Tab.analysis) {
-                Label("Analysis", systemImage: Tab.analysis.icon)
-            }
-        }
-        .listStyle(.sidebar)
-        .frame(minWidth: 200, maxWidth: 250)
-    }
-    
+    @ViewBuilder
     private var mainContent: some View {
-        NavigationStack {
-            Group {
-                switch selectedTab {
-                case .options:
-                    OptionListView(options: .init(
-                        get: { decisionVM.decision.options },
-                        set: { newOptions in
-                            Task {
-                                for option in newOptions {
-                                    try? await decisionVM.updateOption(option)
-                                }
-                            }
-                        }
-                    ))
-                    
-                case .criteria:
-                    CriteriaMatrix(
-                        criteria: .init(
-                            get: { decisionVM.decision.criteria },
-                            set: { newCriteria in
-                                Task {
-                                    for criterion in newCriteria {
-                                        try? await decisionVM.updateCriterion(criterion)
-                                    }
-                                }
-                            }
-                        ),
-                        pairwiseComparisons: .init(
-                            get: { decisionVM.decision.pairwiseComparisons ?? [] },
-                            set: { comparisons in
-                                Task {
-                                    try? await decisionVM.updatePairwiseComparisons(comparisons)
-                                }
-                            }
-                        )
-                    )
-                    
-                case .analysis:
-                    if let results = decisionVM.decision.analysisResults {
-                        ResultsVisualization(results: results)
-                    } else {
-                        EmptyAnalysisView()
-                    }
-                }
-            }
+        if decisions.isEmpty {
+            EmptyStateView(onAddDecision: { showingNewDecisionSheet = true })
+        } else {
+            decisionGridView
         }
     }
     
-    private func analyze() {
-        Task {
-            try? await decisionVM.performAnalysis()
+    private var decisionGridView: some View {
+        ScrollView {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 300, maximum: .infinity))],
+                spacing: 24
+            ) {
+                decisionCards
+                addDecisionButton
+            }
+            .padding(24)
         }
+    }
+    
+    @ViewBuilder
+    private var decisionCards: some View {
+        ForEach(decisions) { decision in
+            DecisionCard(decision: decision)
+        }
+    }
+    
+    @ViewBuilder
+    private var addDecisionButton: some View {
+        if decisions.count < maxDecisions {
+            AddDecisionCard(onClick: { showingNewDecisionSheet = true })
+        }
+    }
+    
+    @ViewBuilder
+    private var toolbarContent: some View {
+        if !decisions.isEmpty && decisions.count < maxDecisions {
+            Button(action: { showingNewDecisionSheet = true }) {
+                Label("New Decision", systemImage: "plus")
+            }
+        }
+    }
+}
+
+struct AddDecisionCard: View {
+    let onClick: () -> Void
+    
+    var body: some View {
+        Button(action: onClick) {
+            HStack {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 16, weight: .light))
+                Text("Add Another Decision")
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .foregroundColor(.secondary)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color.secondary.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [4]))
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

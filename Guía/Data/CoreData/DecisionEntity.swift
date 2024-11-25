@@ -34,23 +34,77 @@ public class DecisionEntity: NSManagedObject {
     func toDomain() -> Decision {
         let decoder = JSONDecoder()
         
-        let options = (try? decoder.decode([Option].self, from: optionsData ?? Data())) ?? []
-        let criteria = (try? decoder.decode([Criterion].self, from: criteriaData ?? Data())) ?? []
-        let weights = (try? decoder.decode([UUID: Double].self, from: weightsData ?? Data())) ?? [:]
-        let results = try? decoder.decode(AnalysisResults.self, from: analysisResultsData ?? Data())
-        let pairwiseComparisons = try? decoder.decode([[Double]].self, from: pairwiseComparisonsData ?? Data())
+        // Create a dictionary representing the Decision structure
+        var decisionDict: [String: Any] = [
+            "id": id,
+            "title": title,
+            "description": desc as Any,
+            "context": [
+                "timeframe": "immediate",
+                "impact": "medium",
+                "reversibility": true
+            ]
+        ]
         
-        return Decision(
-            id: id,
-            title: title,
-            description: desc,
-            options: options,
-            criteria: criteria,
-            weights: weights,
-            pairwiseComparisons: pairwiseComparisons,
-            created: createdAt,
-            modified: modifiedAt,
-            analysisResults: results
-        )
+        // Safely decode collections
+        if let optionsData = optionsData,
+           let options = try? decoder.decode([Option].self, from: optionsData) {
+            decisionDict["options"] = options
+        } else {
+            decisionDict["options"] = []
+        }
+        
+        if let criteriaData = criteriaData,
+           let criteria = try? decoder.decode([Criterion].self, from: criteriaData) {
+            decisionDict["criteria"] = criteria
+        } else {
+            decisionDict["criteria"] = []
+        }
+        
+        if let weightsData = weightsData,
+           let weights = try? decoder.decode([UUID: Double].self, from: weightsData) {
+            decisionDict["weights"] = weights
+        } else {
+            decisionDict["weights"] = [:]
+        }
+        
+        decisionDict["evaluation"] = [
+            "criteria": [],
+            "scores": [:]
+        ]
+        
+        decisionDict["insights"] = []
+        
+        if let pairwiseData = pairwiseComparisonsData {
+            decisionDict["pairwiseComparisons"] = try? decoder.decode([[Double]].self, from: pairwiseData)
+        }
+        
+        if let analysisData = analysisResultsData {
+            decisionDict["analysisResults"] = try? decoder.decode(AnalysisResults.self, from: analysisData)
+        }
+        
+        decisionDict["state"] = status
+        decisionDict["created"] = createdAt
+        decisionDict["modified"] = modifiedAt
+        
+        // Convert dictionary to JSON Data
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: decisionDict) else {
+            fatalError("Failed to create Decision JSON")
+        }
+        
+        // Decode JSON Data into Decision object
+        do {
+            return try decoder.decode(Decision.self, from: jsonData)
+        } catch {
+            print("Error decoding Decision: \(error)")
+            fatalError("Failed to decode Decision")
+        }
+    }
+}
+
+extension Dictionary where Value == Double {
+    var averageValue: Double {
+        guard !values.isEmpty else { return 0 }
+        return values.reduce(0, +) / Double(values.count)
     }
 } 

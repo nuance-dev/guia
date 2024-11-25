@@ -32,7 +32,7 @@ class UpdateChecker: ObservableObject {
     
     init() {
             self.currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
-            self.githubRepo = "nuance-dev/Figura"
+            self.githubRepo = "nuance-dev/Guia"
             setupTimer()
             updateStatusIcon()
         }
@@ -79,7 +79,7 @@ class UpdateChecker: ObservableObject {
         
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        request.setValue("Figura-App/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Guia-App/\(currentVersion)", forHTTPHeaderField: "User-Agent")
         
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             DispatchQueue.main.async {
@@ -178,5 +178,6 @@ class UpdateChecker: ObservableObject {
     
     deinit {
         updateCheckTimer?.invalidate()
+        updateCheckTimer = nil
     }
 }

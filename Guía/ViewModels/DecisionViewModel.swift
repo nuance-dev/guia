@@ -11,14 +11,52 @@ final class DecisionViewModel: ObservableObject {
     // MARK: - Dependencies
     private let analysisEngine: AnalysisEngine
     private let storageService: StorageService
+    private let flowCoordinator: DecisionFlowCoordinator
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialize
-    init(decision: Decision, 
+    init(decision: Decision,
          analysisEngine: AnalysisEngine = AnalysisEngine(),
          storageService: StorageService = StorageService()) {
         self.decision = decision
         self.analysisEngine = analysisEngine
         self.storageService = storageService
+        self.flowCoordinator = DecisionFlowCoordinator(
+            decision: decision,
+            analysisEngine: analysisEngine
+        )
+        
+        setupBindings()
+    }
+    
+    private func setupBindings() {
+        flowCoordinator.$currentStage
+            .sink { [weak self] stage in
+                self?.handleStageChange(stage)
+            }
+            .store(in: &cancellables)
+            
+        flowCoordinator.$insights
+            .sink { [weak self] insights in
+                self?.handleNewInsights(insights)
+            }
+            .store(in: &cancellables)
+    }
+    
+    func moveToNextStage() async throws {
+        try await flowCoordinator.moveToNextStage()
+    }
+    
+    private func handleStageChange(_ stage: DecisionStage) {
+        // Update UI and state based on stage changes
+        switch stage {
+        case .analysis:
+            Task { try await performAnalysis() }
+        case .validation:
+            validateDecision()
+        default:
+            break
+        }
     }
     
     // MARK: - Public Methods
@@ -112,19 +150,78 @@ final class DecisionViewModel: ObservableObject {
         case completed(AnalysisResults)
         case error(Error)
     }
+    
+    private func handleNewInsights(_ insights: [DecisionFlowCoordinator.DecisionInsight]) {
+        // Update the decision with new insights
+        decision.modified = Date()
+        
+        // Store insights for UI updates
+        Task {
+            try await storageService.updateDecision(decision)
+        }
+    }
+    
+    private func validateDecision() {
+        // Validate decision completeness and quality
+        let hasMinimumOptions = decision.options.count >= 2
+        let hasMinimumCriteria = decision.criteria.count >= 1
+        let hasCompleteScores = decision.options.allSatisfy { option in
+            decision.criteria.allSatisfy { criterion in
+                option.scores[criterion.id] != nil
+            }
+        }
+        
+        if !hasMinimumOptions || !hasMinimumCriteria || !hasCompleteScores {
+            analysisState = .error(DecisionError.validationFailed)
+        }
+    }
+    
+    var completionProgress: Double {
+        let totalSteps = Double(DecisionStage.allCases.count)
+        let completedSteps = Double(DecisionStage.allCases.firstIndex(of: flowCoordinator.currentStage) ?? 0)
+        return completedSteps / totalSteps
+    }
+    
+    var nextActionTitle: String {
+        flowCoordinator.currentStage.title
+    }
+    
+    var nextActionDescription: String {
+        "Complete this step to move forward"
+    }
+    
+    var nextActionIcon: String {
+        flowCoordinator.currentStage.systemImage
+    }
+    
+    var primaryInsight: Decision.Insight? {
+        decision.insights.first
+    }
+    
+    func performNextAction() {
+        Task {
+            try await moveToNextStage()
+        }
+    }
 }
 
 // MARK: - Decision Error
 enum DecisionError: LocalizedError {
+    case stageIncomplete(blockers: [String])
     case optionNotFound
     case criterionNotFound
+    case validationFailed
     
     var errorDescription: String? {
         switch self {
+        case .stageIncomplete(let blockers):
+            return "Stage is incomplete: \(blockers.joined(separator: ", "))"
         case .optionNotFound:
             return "The specified option was not found"
         case .criterionNotFound:
             return "The specified criterion was not found"
+        case .validationFailed:
+            return "Decision validation failed"
         }
     }
 }

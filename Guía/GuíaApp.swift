@@ -5,7 +5,7 @@ import AppKit
 struct GuíaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("isDarkMode") private var isDarkMode = false
-    @StateObject private var menuBarController = MenuBarController()
+    @StateObject private var updater = UpdateChecker()
     @State private var showingUpdateSheet = false
     
     var body: some Scene {
@@ -13,14 +13,12 @@ struct GuíaApp: App {
             ContentView()
                 .preferredColorScheme(isDarkMode ? .dark : .light)
                 .background(WindowAccessor())
-                .environmentObject(menuBarController)
                 .sheet(isPresented: $showingUpdateSheet) {
-                    MenuBarView(updater: menuBarController.updater)
-                        .environmentObject(menuBarController)
+                    // Replace with a simple update view if needed
                 }
                 .onAppear {
-                    menuBarController.updater.checkForUpdates()
-                    menuBarController.updater.onUpdateAvailable = {
+                    updater.checkForUpdates()
+                    updater.onUpdateAvailable = {
                         showingUpdateSheet = true
                     }
                 }
@@ -30,13 +28,13 @@ struct GuíaApp: App {
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates...") {
                     showingUpdateSheet = true
-                    menuBarController.updater.checkForUpdates()
+                    updater.checkForUpdates()
                 }
                 .keyboardShortcut("U", modifiers: [.command])
                 
-                if menuBarController.updater.updateAvailable {
+                if updater.updateAvailable {
                     Button("Download Update") {
-                        if let url = menuBarController.updater.downloadURL {
+                        if let url = updater.downloadURL {
                             NSWorkspace.shared.open(url)
                         }
                     }

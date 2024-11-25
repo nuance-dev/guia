@@ -214,5 +214,12 @@ final class SensitivityAnalyzer {
             .filter { $0.elasticity > threshold }
             .map { $0.criterion }
     }
+    
+    private func validateWeights(_ weights: [UUID: Double]) throws {
+        let totalWeight = weights.values.reduce(0, +)
+        guard totalWeight > 0 else {
+            throw AnalysisError.invalidWeights("Total weight must be greater than 0")
+        }
+    }
 }
 
