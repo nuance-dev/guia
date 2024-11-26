@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var engine: DecisionEngine
     @State private var firstOption = ""
     @State private var secondOption = ""
     @State private var scrollOffset: CGFloat = 0
@@ -217,9 +216,4 @@ extension View {
             self
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .environmentObject(DecisionEngine())
 }
