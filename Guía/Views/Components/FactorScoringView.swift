@@ -5,6 +5,7 @@ struct FactorScoringView: View {
     @State private var currentFactorIndex = 0
     @State private var showingComparison = false
     @EnvironmentObject private var flowManager: DecisionFlowManager
+    @EnvironmentObject private var decisionContext: DecisionContext
     
     private var currentFactor: Factor? {
         guard !options.isEmpty,
@@ -29,6 +30,17 @@ struct FactorScoringView: View {
                 }
             }
             
+            // Progress indicator
+            if let firstOption = options.first, !firstOption.factors.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(0..<firstOption.factors.count, id: \.self) { index in
+                        Circle()
+                            .fill(Color.white.opacity(index == currentFactorIndex ? 0.8 : 0.2))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+            }
+            
             if let factor = currentFactor {
                 // Scoring interface
                 VStack(spacing: 24) {
@@ -43,10 +55,17 @@ struct FactorScoringView: View {
                 .transition(.move(edge: .leading).combined(with: .opacity))
             }
             
+            Spacer()
+            
             // Factor navigation
             if showingComparison {
                 FactorComparisonGrid(options: options)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
+            // Help tip
+            if !showingComparison {
+                ContextualHelpView(tip: "Rate how well each option performs for this factor. Consider both positive and negative impacts.")
             }
         }
         .onChange(of: currentFactorIndex) { _, _ in
@@ -91,47 +110,40 @@ struct ScoringSlider: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
             
-            HStack(spacing: 16) {
-                Text("Worse")
+            HStack {
+                Text("Poor")
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.6))
                 
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // Track
-                        Rectangle()
-                            .fill(LinearGradient(
-                                colors: [.red.opacity(0.3), .clear, .green.opacity(0.3)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ))
-                            .frame(height: 4)
-                            .cornerRadius(2)
-                        
-                        // Thumb
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 16, height: 16)
-                            .offset(x: (geometry.size.width * ((score + 1) / 2)) - 8)
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        let newScore = (value.location.x / geometry.size.width) * 2 - 1
-                                        score = max(-1, min(1, newScore))
-                                        onChange(score)
-                                    }
-                            )
-                    }
+                Slider(value: $score, in: -1...1) { _ in
+                    onChange(score)
                 }
-                .frame(height: 16)
+                .tint(.white.opacity(0.6))
                 
-                Text("Better")
+                Text("Excellent")
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.6))
             }
+            
+            // Score indicator
+            HStack(spacing: 2) {
+                ForEach(0..<20) { index in
+                    Rectangle()
+                        .fill(Color.white.opacity(
+                            Double(index) / 20 <= (score + 1) / 2 ? 0.6 : 0.1
+                        ))
+                        .frame(height: 4)
+                }
+            }
         }
-        .padding(16)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(12)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
 } 

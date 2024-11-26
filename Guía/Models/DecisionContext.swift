@@ -1,6 +1,7 @@
 import Foundation
 
 class DecisionContext: ObservableObject {
+    @Published var mainDecision: String = ""
     @Published var options: [Option] = []
     @Published var currentStep: DecisionStep = .firstOption
     @Published var canProceed: Bool = false
@@ -9,6 +10,11 @@ class DecisionContext: ObservableObject {
     
     init() {
         self.options = []
+    }
+    
+    func setMainDecision(_ decision: String) {
+        mainDecision = decision
+        updateCanProceed()
     }
     
     func addOption(_ name: String) {
@@ -26,7 +32,7 @@ class DecisionContext: ObservableObject {
     private func updateCanProceed() {
         switch currentStep {
         case .firstOption:
-            canProceed = options.first != nil && !options.first!.name.isEmpty
+            canProceed = !mainDecision.isEmpty && options.first != nil && !options.first!.name.isEmpty
         case .secondOption:
             canProceed = options.count > 1 && !options[1].name.isEmpty
         case .factorInput:

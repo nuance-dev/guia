@@ -5,6 +5,7 @@ struct FactorCollectionView: View {
     @State private var newFactorName = ""
     @FocusState private var isFocused: Bool
     @EnvironmentObject private var flowManager: DecisionFlowManager
+    @EnvironmentObject private var decisionContext: DecisionContext
     
     private let maxFactors = 5
     private let suggestions = [
@@ -15,6 +16,23 @@ struct FactorCollectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             headerSection
+            
+            // Context section
+            VStack(alignment: .leading, spacing: 16) {
+                if !decisionContext.options.isEmpty {
+                    HStack(spacing: 12) {
+                        ForEach(decisionContext.options) { option in
+                            Text(option.name)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.white.opacity(0.03))
+                                .cornerRadius(16)
+                        }
+                    }
+                }
+            }
             
             // Always show suggestions with reduced spacing
             suggestionsGrid
@@ -27,6 +45,11 @@ struct FactorCollectionView: View {
             }
             
             Spacer()
+            
+            if !factors.isEmpty {
+                ContextualHelpView(tip: "Great factors! These will help evaluate each option objectively.")
+                    .transition(.opacity)
+            }
         }
         .onChange(of: factors.count) { _, count in
             flowManager.updateProgressibility(count >= 2)

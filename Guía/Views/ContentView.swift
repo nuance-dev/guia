@@ -3,12 +3,19 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var decisionContext = DecisionContext()
     @StateObject private var flowManager = DecisionFlowManager()
+    @State private var showContextBar = false
     
     var body: some View {
         ZStack {
             BackgroundView()
             
             VStack(spacing: 0) {
+                // Floating context bar
+                if showContextBar && !decisionContext.mainDecision.isEmpty {
+                    FloatingContextBar(decision: decisionContext.mainDecision)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
                 HeaderView(progress: flowManager.progress)
                     .padding(.horizontal, 24)
                 
@@ -24,39 +31,13 @@ struct ContentView: View {
                 }
             }
             
-            // Navigation hints
-            ZStack {
-                // Back hint
-                if flowManager.canGoBack {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Text("← press esc to go back")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.3))
-                                .padding(.leading, 16)
-                                .padding(.bottom, 16)
-                            Spacer()
-                        }
-                    }
-                }
-                
-                // Progress hint
-                if flowManager.canProgress {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Text("press enter ⏎")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.3))
-                                .padding(.trailing, 16)
-                                .padding(.bottom, 16)
-                        }
-                    }
-                }
+            // Navigation hints with enhanced styling
+            NavigationHints(canGoBack: flowManager.canGoBack, canProgress: flowManager.canProgress)
+        }
+        .onChange(of: flowManager.currentStep) { newStep in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showContextBar = newStep != .initial
             }
-            .transition(.opacity)
         }
         .environmentObject(flowManager)
         .environmentObject(decisionContext)
@@ -166,5 +147,84 @@ struct BackgroundView: View {
             }
         }
         .ignoresSafeArea()
+    }
+}
+
+// New Components
+struct FloatingContextBar: View {
+    let decision: String
+    
+    var body: some View {
+        HStack {
+            Text("Deciding: ")
+                .foregroundColor(.gray)
+            +
+            Text(decision)
+                .foregroundColor(.white)
+        }
+        .font(.system(size: 14, weight: .medium))
+        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .background {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        }
+        .padding(.top, 16)
+    }
+}
+
+struct NavigationHints: View {
+    let canGoBack: Bool
+    let canProgress: Bool
+    
+    var body: some View {
+        ZStack {
+            if canGoBack {
+                VStack {
+                    Spacer()
+                    HStack {
+                        HStack(spacing: 4) {
+                            Image(systemName: "escape")
+                                .font(.system(size: 10))
+                            Text("back")
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(4)
+                        .padding(.leading, 16)
+                        .padding(.bottom, 16)
+                        Spacer()
+                    }
+                }
+            }
+            
+            if canProgress {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Text("continue")
+                            Image(systemName: "return")
+                                .font(.system(size: 10))
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(4)
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
+            }
+        }
+        .font(.system(size: 12))
+        .foregroundColor(.white.opacity(0.5))
+        .transition(.opacity)
     }
 }
