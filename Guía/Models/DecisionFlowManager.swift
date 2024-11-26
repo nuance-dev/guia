@@ -1,23 +1,39 @@
 import SwiftUI
 
 class DecisionFlowManager: ObservableObject {
-    enum DecisionStep {
+    enum DecisionStep: CaseIterable {
         case initial
         case optionEntry
         case factorCollection
         case weighting
         case analysis
+        
+        var nextStep: DecisionStep? {
+            let allCases = DecisionStep.allCases
+            guard let currentIndex = allCases.firstIndex(of: self),
+                  currentIndex + 1 < allCases.count else { return nil }
+            return allCases[currentIndex + 1]
+        }
+        
+        var previousStep: DecisionStep? {
+            let allCases = DecisionStep.allCases
+            guard let currentIndex = allCases.firstIndex(of: self),
+                  currentIndex > 0 else { return nil }
+            return allCases[currentIndex - 1]
+        }
     }
     
     @Published var currentStep: DecisionStep = .initial
     @Published var showHelp = false
     @Published var progress: CGFloat = 0.0
     @Published var canProgress = false
+    @Published var canGoBack = false
     
     private var keyboardHandler: KeyboardHandler?
     
     init() {
         setupKeyboardHandler()
+        updateNavigationState()
     }
     
     private func setupKeyboardHandler() {
@@ -68,31 +84,33 @@ class DecisionFlowManager: ObservableObject {
         }
     }
     
-    func advanceStep() {
+    func goBack() {
+        guard let previousStep = currentStep.previousStep else { return }
         withAnimation(.spring(response: 0.3)) {
-            switch currentStep {
-            case .initial:
-                currentStep = .optionEntry
-                progress = 0.25
-            case .optionEntry:
-                currentStep = .factorCollection
-                progress = 0.5
-            case .factorCollection:
-                currentStep = .weighting
-                progress = 0.75
-            case .weighting:
-                currentStep = .analysis
-                progress = 1.0
-            case .analysis:
-                break
-            }
-            
-            // Show contextual help with delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    self.showHelp = true
-                }
-            }
+            currentStep = previousStep
+            updateProgress()
+            updateNavigationState()
         }
+    }
+    
+    func advanceStep() {
+        guard let nextStep = currentStep.nextStep else { return }
+        withAnimation(.spring(response: 0.3)) {
+            currentStep = nextStep
+            updateProgress()
+            updateNavigationState()
+        }
+    }
+    
+    private func updateProgress() {
+        let steps = DecisionStep.allCases
+        if let currentIndex = steps.firstIndex(of: currentStep) {
+            progress = CGFloat(currentIndex) / CGFloat(steps.count - 1)
+        }
+    }
+    
+    private func updateNavigationState() {
+        canGoBack = currentStep.previousStep != nil
+        // Other navigation state updates...
     }
 } 
