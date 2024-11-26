@@ -11,15 +11,20 @@ struct CriterionEditView: View {
     
     var body: some View {
         Form {
-            TextField("Name", text: $name)
-            TextField("Description (optional)", text: $description)
-            TextField("Unit (optional)", text: $unit)
-            Picker("Importance", selection: $importance) {
-                Text("Low").tag(BasicCriterion.Importance.low)
-                Text("Medium").tag(BasicCriterion.Importance.medium)
-                Text("High").tag(BasicCriterion.Importance.high)
+            Section {
+                TextField("Name", text: $name)
+                TextField("Description (optional)", text: $description)
+                TextField("Unit (optional)", text: $unit)
             }
-            .pickerStyle(.segmented)
+            
+            Section {
+                Picker("Importance", selection: $importance) {
+                    ForEach(BasicCriterion.Importance.allCases, id: \.self) { importance in
+                        Text(importance.title).tag(importance)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
         }
         .navigationTitle("New Criterion")
         .toolbar {
@@ -44,6 +49,16 @@ struct CriterionEditView: View {
                 }
                 .disabled(name.isEmpty)
             }
+        }
+    }
+}
+
+private extension BasicCriterion.Importance {
+    var title: String {
+        switch self {
+        case .low: return "Low"
+        case .medium: return "Medium"
+        case .high: return "High"
         }
     }
 } 

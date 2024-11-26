@@ -101,34 +101,46 @@ final class DecisionViewModel: ObservableObject {
     }
     
     func addCriterion(_ criterion: any Criterion) async throws {
+        let unifiedCriterion: UnifiedCriterion
+        
         if let basicCriterion = criterion as? BasicCriterion {
-            decision.criteria.append(basicCriterion)
-            decision.weights[criterion.id] = criterion.weight
-            decision.modified = Date()
-            try await storageService.updateDecision(decision)
+            unifiedCriterion = UnifiedCriterion(
+                id: basicCriterion.id,
+                name: basicCriterion.name,
+                description: basicCriterion.description,
+                importance: .init(from: basicCriterion.importance),
+                unit: basicCriterion.unit
+            )
+        } else if let unified = criterion as? UnifiedCriterion {
+            unifiedCriterion = unified
         } else {
             throw DecisionError.invalidCriterionType
         }
+        
+        decision.criteria.append(unifiedCriterion)
+        decision.weights[unifiedCriterion.id] = unifiedCriterion.weight
+        decision.modified = Date()
+        try await storageService.updateDecision(decision)
     }
     
     func updateCriterion(_ criterion: any Criterion) async throws {
-        guard let basicCriterion = criterion as? BasicCriterion,
+        guard let unifiedCriterion = criterion as? UnifiedCriterion,
               let index = decision.criteria.firstIndex(where: { $0.id == criterion.id }) else {
             throw DecisionError.criterionNotFound
         }
         
-        decision.criteria[index] = basicCriterion
+        decision.criteria[index] = unifiedCriterion
         decision.weights[criterion.id] = criterion.weight
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
     func deleteCriterion(_ criterion: any Criterion) async throws {
-        guard let basicCriterion = criterion as? BasicCriterion else {
+        guard let unifiedCriterion = criterion as? UnifiedCriterion else {
             throw DecisionError.invalidCriterionType
         }
-        decision.criteria.removeAll { $0.id == basicCriterion.id }
-        decision.weights.removeValue(forKey: basicCriterion.id)
+        decision.criteria.removeAll { $0.id == unifiedCriterion.id }
+        decision.weights.removeValue(forKey: unifiedCriterion.id)
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
@@ -177,10 +189,17 @@ final class DecisionViewModel: ObservableObject {
     }
     
     private func handleNewInsights(_ insights: [DecisionFlowCoordinator.DecisionInsight]) {
-        // Update the decision with new insights
+        // Convert coordinator insights to Decision.Insight
+        decision.insights = insights.map { coordinatorInsight in
+            Decision.Insight(
+                type: .init(from: coordinatorInsight.type),
+                message: coordinatorInsight.message,
+                recommendation: coordinatorInsight.recommendation
+            )
+        }
+        
         decision.modified = Date()
         
-        // Store insights for UI updates
         Task {
             try await storageService.updateDecision(decision)
         }
@@ -246,7 +265,10 @@ final class DecisionViewModel: ObservableObject {
     }
     
     var primaryInsight: Decision.Insight? {
-        decision.insights.first
+        if let insight = decision.insights.first {
+            return insight
+        }
+        return nil
     }
     
     func performNextAction() {
@@ -304,6 +326,29 @@ enum DecisionError: LocalizedError {
             return "Decision validation failed"
         case .invalidCriterionType:
             return "Invalid criterion type"
+        }
+    }
+}
+
+// MARK: - Type Conversions
+private extension Decision.Insight.InsightType {
+    init(from coordinatorType: DecisionFlowCoordinator.DecisionInsight.InsightType) {
+        switch coordinatorType {
+        case .bias: self = .bias
+        case .dataQuality: self = .pattern
+        case .stakeholder: self = .warning
+        case .sensitivity: self = .suggestion
+        case .tradeoff: self = .pattern
+        }
+    }
+}
+
+private extension UnifiedCriterion.Importance {
+    init(from basicImportance: BasicCriterion.Importance) {
+        switch basicImportance {
+        case .low: self = .low
+        case .medium: self = .medium
+        case .high: self = .high
         }
     }
 }
