@@ -83,26 +83,34 @@ final class DecisionViewModel: ObservableObject {
     }
     
     func addCriterion(_ criterion: any Criterion) async throws {
-        decision.criteria.append(criterion)
-        decision.weights[criterion.id] = criterion.weight
-        decision.modified = Date()
-        try await storageService.updateDecision(decision)
+        if let basicCriterion = criterion as? BasicCriterion {
+            decision.criteria.append(basicCriterion)
+            decision.weights[criterion.id] = criterion.weight
+            decision.modified = Date()
+            try await storageService.updateDecision(decision)
+        } else {
+            throw DecisionError.invalidCriterionType
+        }
     }
     
     func updateCriterion(_ criterion: any Criterion) async throws {
-        guard let index = decision.criteria.firstIndex(where: { $0.id == criterion.id }) else {
+        guard let basicCriterion = criterion as? BasicCriterion,
+              let index = decision.criteria.firstIndex(where: { $0.id == criterion.id }) else {
             throw DecisionError.criterionNotFound
         }
         
-        decision.criteria[index] = criterion
+        decision.criteria[index] = basicCriterion
         decision.weights[criterion.id] = criterion.weight
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
     func deleteCriterion(_ criterion: any Criterion) async throws {
-        decision.criteria.removeAll { $0.id == criterion.id }
-        decision.weights.removeValue(forKey: criterion.id)
+        guard let basicCriterion = criterion as? BasicCriterion else {
+            throw DecisionError.invalidCriterionType
+        }
+        decision.criteria.removeAll { $0.id == basicCriterion.id }
+        decision.weights.removeValue(forKey: basicCriterion.id)
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
@@ -238,6 +246,7 @@ enum DecisionError: LocalizedError {
     case optionNotFound
     case criterionNotFound
     case validationFailed
+    case invalidCriterionType
     
     var errorDescription: String? {
         switch self {
@@ -249,6 +258,8 @@ enum DecisionError: LocalizedError {
             return "The specified criterion was not found"
         case .validationFailed:
             return "Decision validation failed"
+        case .invalidCriterionType:
+            return "Invalid criterion type"
         }
     }
 }

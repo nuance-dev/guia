@@ -2,7 +2,7 @@ import Foundation
 import CoreData
 
 // MARK: - Decision Model
-public struct Decision: Identifiable, Codable {
+public struct Decision: Identifiable, Codable, Hashable {
     public let id: UUID
     public var title: String
     public var description: String?
@@ -17,6 +17,15 @@ public struct Decision: Identifiable, Codable {
     public var state: DecisionState
     public var created: Date
     public var modified: Date
+    
+    // MARK: - Hashable Conformance
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public static func == (lhs: Decision, rhs: Decision) -> Bool {
+        lhs.id == rhs.id
+    }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
