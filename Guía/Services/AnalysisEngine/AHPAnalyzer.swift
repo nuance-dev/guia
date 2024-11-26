@@ -9,7 +9,7 @@ final class AHPAnalyzer {
     private var optionScores: [[Double]] = []
     
     // MARK: - Public Methods
-    func analyze(criteria: [Criterion], 
+    func analyze(criteria: [any Criterion], 
                 pairwiseMatrix: [[Double]], 
                 optionsMatrix: [[[Double]]]) throws -> AHPResults {
         // Validate input matrices

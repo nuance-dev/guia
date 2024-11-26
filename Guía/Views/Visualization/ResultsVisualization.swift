@@ -249,7 +249,7 @@ private struct SensitivityMatrixView: View {
 }
 
 private struct RadarChartBackground: View {
-    let criteria: [Criterion]
+    let criteria: [any Criterion]
     
     var body: some View {
         GeometryReader { geometry in
@@ -275,7 +275,7 @@ private struct RadarChartBackground: View {
 private struct RadarAxes: View {
     let center: CGPoint
     let radius: CGFloat
-    let criteria: [Criterion]
+    let criteria: [any Criterion]
     
     var body: some View {
         ForEach(0..<criteria.count, id: \.self) { index in

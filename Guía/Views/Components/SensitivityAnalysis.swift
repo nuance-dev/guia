@@ -4,7 +4,7 @@ import Charts
 struct SensitivityAnalysis: View {
     // MARK: - Properties
     let results: AnalysisResults
-    @State private var selectedCriterion: Criterion?
+    @State private var selectedCriterion: (any Criterion)?
     @State private var weightAdjustment: Double = 0
     @State private var showingCriticalCriteriaInfo = false
     
@@ -32,7 +32,7 @@ struct SensitivityAnalysis: View {
         }
     }
     
-    private func weightAdjustmentSlider(for criterion: Criterion) -> some View {
+    private func weightAdjustmentSlider(for criterion: any Criterion) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Weight Adjustment for \(criterion.name)")
                 .font(.subheadline)

@@ -29,7 +29,7 @@ struct DecisionCard: View {
             
             // Smart Insights
             if let primaryInsight = viewModel.primaryInsight {
-                InsightBadge(insight: .init(from: primaryInsight))
+                InsightBadge(insight: primaryInsight)
             }
             
             // Quick Actions

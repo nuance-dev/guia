@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct InsightBadge: View {
-    let insight: DecisionFlowCoordinator.DecisionInsight
+    let insight: Decision.Insight
     
     var body: some View {
         HStack(spacing: 8) {
@@ -20,19 +20,19 @@ struct InsightBadge: View {
     
     private var iconName: String {
         switch insight.type {
+        case .pattern: return "chart.bar"
         case .bias: return "exclamationmark.triangle"
-        case .dataQuality: return "chart.bar"
-        case .stakeholder: return "person.2"
-        case .sensitivity: return "arrow.up.arrow.down"
-        case .tradeoff: return "arrow.left.arrow.right"
+        case .suggestion: return "lightbulb"
+        case .warning: return "exclamationmark.circle"
         }
     }
     
     private var severityColor: Color {
-        switch insight.severity {
-        case .info: return .blue
-        case .warning: return .orange
-        case .critical: return .red
+        switch insight.type {
+        case .pattern: return .blue
+        case .bias: return .orange
+        case .suggestion: return .green
+        case .warning: return .red
         }
     }
 } 

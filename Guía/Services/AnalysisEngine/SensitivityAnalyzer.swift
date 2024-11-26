@@ -28,7 +28,7 @@ final class SensitivityAnalyzer {
     // MARK: - Public Methods
     func analyzeSensitivity(
         originalResults: AHPResults,
-        criteria: [Criterion],
+        criteria: [any Criterion],
         options: [Option],
         perturbationRange: ClosedRange<Double> = -0.2...0.2,
         steps: Int = 10
@@ -130,7 +130,7 @@ final class SensitivityAnalyzer {
     }
     
     private func calculateSensitivityMetrics(
-        criterion: Criterion,
+        criterion: any Criterion,
         variations: [WeightVariation]
     ) -> CriterionSensitivity {
         // Calculate baseline rankings
@@ -156,8 +156,8 @@ final class SensitivityAnalyzer {
                         if (baselineScores[i] > baselineScores[j]) != 
                            (variation.scores[i] > variation.scores[j]) {
                             rankReversals.append(RankReversal(
-                                option1: Option(id: UUID(), name: "Option \(i)"),
-                                option2: Option(id: UUID(), name: "Option \(j)"),
+                                option1: Option(id: UUID(), title: "Option \(i)"),
+                                option2: Option(id: UUID(), title: "Option \(j)"),
                                 weightThreshold: variation.delta
                             ))
                         }
@@ -208,7 +208,7 @@ final class SensitivityAnalyzer {
     }
     
     // Add missing method
-    private func identifyCriticalCriteria(_ sensitivities: [CriterionSensitivity]) -> [Criterion] {
+    private func identifyCriticalCriteria(_ sensitivities: [CriterionSensitivity]) -> [any Criterion] {
         let threshold = 0.1 // Sensitivity threshold for critical criteria
         return sensitivities
             .filter { $0.elasticity > threshold }

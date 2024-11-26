@@ -2,12 +2,12 @@ import SwiftUI
 
 struct CriteriaMatrix: View {
     // MARK: - Properties
-    @Binding var criteria: [Criterion]
+    @Binding var criteria: [any Criterion]
     @Binding var pairwiseComparisons: [[Double]]
     @Environment(\.isAdvancedMode) private var isAdvancedMode
     
     // MARK: - Initialize
-    init(criteria: Binding<[Criterion]>, pairwiseComparisons: Binding<[[Double]]>) {
+    init(criteria: Binding<[any Criterion]>, pairwiseComparisons: Binding<[[Double]]>) {
         self._criteria = criteria
         self._pairwiseComparisons = pairwiseComparisons
     }
@@ -82,7 +82,7 @@ struct CriteriaMatrix: View {
     }
     
     // MARK: - Helper Methods
-    private func binding(for criterion: Criterion) -> Binding<Double> {
+    private func binding(for criterion: any Criterion) -> Binding<Double> {
         guard let index = criteria.firstIndex(where: { $0.id == criterion.id }) else {
             return .constant(0)
         }
@@ -120,7 +120,7 @@ struct ComparisonCell: View {
 }
 
 struct CriterionWeightRow: View {
-    let criterion: Criterion
+    let criterion: any Criterion
     @Binding var weight: Double
     
     var body: some View {

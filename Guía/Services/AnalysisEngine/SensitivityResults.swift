@@ -2,11 +2,11 @@ import Foundation
 
 struct SensitivityResults {
     let criterionSensitivities: [CriterionSensitivity]
-    let criticalCriteria: [Criterion]
+    let criticalCriteria: [any Criterion]
 }
 
 struct CriterionSensitivity {
-    let criterion: Criterion
+    let criterion: any Criterion
     let elasticity: Double
     let rankReversals: [RankReversal]
     let stabilityIndex: Double

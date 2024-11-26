@@ -2,37 +2,33 @@ import SwiftUI
 
 struct OptionListView: View {
     // MARK: - Properties
-    @Binding var options: [Option]
-    @State private var draggedOption: Option?
+    @Binding var options: [OptionModel]
     @State private var showingAddSheet = false
-    @State private var editingOption: Option?
+    @State private var editingOption: OptionModel?
     
     // MARK: - Body
     var body: some View {
         List {
             ForEach(options) { option in
-                OptionRowView(
-                    option: option,
-                    onEdit: { editingOption = option },
-                    onDelete: { deleteOption(option) }
-                )
+                OptionRowView(option: option) {
+                    editingOption = option
+                } onDelete: {
+                    deleteOption(option)
+                }
                 .contextMenu {
-                    Button("Edit") { editingOption = option }
-                    Button("Duplicate") { duplicateOption(option) }
-                    Divider()
-                    Button("Delete", role: .destructive) { deleteOption(option) }
+                    Button(action: { duplicateOption(option) }) {
+                        Label("Duplicate", systemImage: "doc.on.doc")
+                    }
+                    Button(role: .destructive, action: { deleteOption(option) }) {
+                        Label("Delete", systemImage: "trash")
+                    }
                 }
             }
-            .onMove { source, destination in
-                options.move(fromOffsets: source, toOffset: destination)
-            }
-        }
-        .listStyle(.inset)
-        .toolbar {
-            ToolbarItem {
-                Button(action: { showingAddSheet = true }) {
-                    Label("Add Option", systemImage: "plus")
-                }
+            
+            Button {
+                showingAddSheet = true
+            } label: {
+                Label("Add Option", systemImage: "plus")
             }
         }
         .sheet(isPresented: $showingAddSheet) {
@@ -52,8 +48,8 @@ struct OptionListView: View {
     }
     
     // MARK: - Private Methods
-    private func duplicateOption(_ option: Option) {
-        let duplicate = Option(
+    private func duplicateOption(_ option: OptionModel) {
+        let duplicate = OptionModel(
             id: UUID(),
             name: option.name + " (Copy)",
             description: option.description,
@@ -63,7 +59,7 @@ struct OptionListView: View {
         options.append(duplicate)
     }
     
-    private func deleteOption(_ option: Option) {
+    private func deleteOption(_ option: OptionModel) {
         if let index = options.firstIndex(where: { $0.id == option.id }) {
             options.remove(at: index)
         }
@@ -72,7 +68,7 @@ struct OptionListView: View {
 
 // MARK: - Supporting Views
 struct OptionRowView: View {
-    let option: Option
+    let option: OptionModel
     let onEdit: () -> Void
     let onDelete: () -> Void
     

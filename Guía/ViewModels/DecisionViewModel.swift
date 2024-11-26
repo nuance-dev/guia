@@ -60,13 +60,13 @@ final class DecisionViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
-    func addOption(_ option: Option) async throws {
+    func addOption(_ option: OptionModel) async throws {
         decision.options.append(option)
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
-    func updateOption(_ option: Option) async throws {
+    func updateOption(_ option: OptionModel) async throws {
         guard let index = decision.options.firstIndex(where: { $0.id == option.id }) else {
             throw DecisionError.optionNotFound
         }
@@ -76,44 +76,43 @@ final class DecisionViewModel: ObservableObject {
         try await storageService.updateDecision(decision)
     }
     
-    func deleteOption(_ option: Option) async throws {
+    func deleteOption(_ option: OptionModel) async throws {
         decision.options.removeAll { $0.id == option.id }
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
-    func addCriterion(_ criterion: Criterion) async throws {
+    func addCriterion(_ criterion: any Criterion) async throws {
         decision.criteria.append(criterion)
-        decision.weights[criterion.id] = criterion.effectiveWeight
+        decision.weights[criterion.id] = criterion.weight
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
-    func updateCriterion(_ criterion: Criterion) async throws {
+    func updateCriterion(_ criterion: any Criterion) async throws {
         guard let index = decision.criteria.firstIndex(where: { $0.id == criterion.id }) else {
             throw DecisionError.criterionNotFound
         }
         
         decision.criteria[index] = criterion
-        decision.weights[criterion.id] = criterion.effectiveWeight
+        decision.weights[criterion.id] = criterion.weight
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
-    func deleteCriterion(_ criterion: Criterion) async throws {
+    func deleteCriterion(_ criterion: any Criterion) async throws {
         decision.criteria.removeAll { $0.id == criterion.id }
         decision.weights.removeValue(forKey: criterion.id)
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
     
-    func updateWeight(for criterion: Criterion, to value: Double) async throws {
-        guard decision.criteria.contains(where: { $0.id == criterion.id }) else {
+    func updateWeight(for criterion: any Criterion, to value: Double) async throws {
+        guard let index = decision.criteria.firstIndex(where: { $0.id == criterion.id }) else {
             throw DecisionError.criterionNotFound
         }
         
-        let normalizedValue = max(0, min(1, value))
-        decision.weights[criterion.id] = normalizedValue
+        decision.weights[criterion.id] = value
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
@@ -202,6 +201,34 @@ final class DecisionViewModel: ObservableObject {
         Task {
             try await moveToNextStage()
         }
+    }
+    
+    func isStageCompleted(_ stage: DecisionStage) -> Bool {
+        switch stage {
+        case .problem:
+            return !decision.title.isEmpty
+        case .stakeholders:
+            return decision.cognitiveContext?.stakeholderImpact.count ?? 0 > 0
+        case .options:
+            return decision.options.count >= 2
+        case .criteria:
+            return !decision.criteria.isEmpty
+        case .weights:
+            return decision.validateWeights()
+        case .analysis:
+            return decision.analysisResults != nil
+        case .refinement:
+            return true // Always allow refinement
+        case .validation:
+            return decision.evaluation.isComplete
+        }
+    }
+    
+    func updateProblem(title: String, description: String?) async throws {
+        decision.title = title
+        decision.description = description
+        decision.modified = Date()
+        try await storageService.updateDecision(decision)
     }
 }
 

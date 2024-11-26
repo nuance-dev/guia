@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Analysis Method
-enum AnalysisMethod: String, Codable {
+public enum AnalysisMethod: String, Codable {
     case simple // Weighted sum
     case ahp    // Analytic Hierarchy Process
     case topsis // TOPSIS method
@@ -67,7 +67,7 @@ final class AnalysisEngine {
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
             method: .simple,
-            criteria: decision.criteria
+            criteria: decision.criteria as [any Criterion]
         )
     }
     
@@ -116,7 +116,7 @@ final class AnalysisEngine {
             confidenceScore: 1.0 - ahpResults.consistencyRatio,
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
             method: .ahp,
-            criteria: decision.criteria
+            criteria: decision.criteria as [any Criterion]
         )
     }
     
@@ -246,7 +246,7 @@ final class AnalysisEngine {
             confidenceScore: calculateConfidenceScore(rankedOptions),
             sensitivityData: calculateSensitivityData(decision, rankedOptions),
             method: .topsis,
-            criteria: decision.criteria
+            criteria: decision.criteria as [any Criterion]
         )
     }
     
@@ -329,7 +329,7 @@ final class AnalysisEngine {
     }
     
     private func findSwitchingPoint(
-        criterion: Criterion,
+        criterion: any Criterion,
         originalWeight: Double,
         baseRanking: [UUID],
         modifiedRanking: [UUID]

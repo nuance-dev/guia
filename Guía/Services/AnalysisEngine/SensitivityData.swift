@@ -1,21 +1,21 @@
 import Foundation
 
 // MARK: - Sensitivity Data
-struct SensitivityData: Codable {
-    var weightSensitivity: [UUID: Double] // Criteria ID to sensitivity score
-    let scoreSensitivity: [UUID: Double]  // Option ID to sensitivity score
-    var stabilityIndex: Double            // Overall stability of the analysis
-    var criticalCriteria: [UUID]          // Critical criteria that most affect the decision
-    var switchingPoints: [SwitchingPoint]   // Switching points where rankings would change
+public struct SensitivityData: Codable {
+    public var weightSensitivity: [UUID: Double] // Criteria ID to sensitivity score
+    public var scoreSensitivity: [UUID: Double]  // Option ID to sensitivity score
+    public var stabilityIndex: Double            // Overall stability of the analysis
+    public var criticalCriteria: [UUID]          // Critical criteria that most affect the decision
+    public var switchingPoints: [SwitchingPoint]   // Switching points where rankings would change
     
-    struct SwitchingPoint: Codable {
-        let criterionId: UUID
-        let currentWeight: Double
-        let switchingWeight: Double
-        let affectedOptions: (UUID, UUID)
+    public struct SwitchingPoint: Codable {
+        public let criterionId: UUID
+        public let currentWeight: Double
+        public let switchingWeight: Double
+        public let affectedOptions: (UUID, UUID)
         
         // Add regular initializer
-        init(criterionId: UUID, currentWeight: Double, switchingWeight: Double, affectedOptions: (UUID, UUID)) {
+        public init(criterionId: UUID, currentWeight: Double, switchingWeight: Double, affectedOptions: (UUID, UUID)) {
             self.criterionId = criterionId
             self.currentWeight = currentWeight
             self.switchingWeight = switchingWeight
@@ -31,7 +31,7 @@ struct SensitivityData: Codable {
         }
         
         // Custom encoding for tuple
-        func encode(to encoder: Encoder) throws {
+        public func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(criterionId, forKey: .criterionId)
             try container.encode(currentWeight, forKey: .currentWeight)
@@ -40,7 +40,7 @@ struct SensitivityData: Codable {
         }
         
         // Custom decoding for tuple
-        init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             criterionId = try container.decode(UUID.self, forKey: .criterionId)
             currentWeight = try container.decode(Double.self, forKey: .currentWeight)
@@ -54,5 +54,13 @@ struct SensitivityData: Codable {
             }
             affectedOptions = (options[0], options[1])
         }
+    }
+    
+    public init(weightSensitivity: [UUID: Double], scoreSensitivity: [UUID: Double], stabilityIndex: Double, criticalCriteria: [UUID], switchingPoints: [SwitchingPoint]) {
+        self.weightSensitivity = weightSensitivity
+        self.scoreSensitivity = scoreSensitivity
+        self.stabilityIndex = stabilityIndex
+        self.criticalCriteria = criticalCriteria
+        self.switchingPoints = switchingPoints
     }
 }

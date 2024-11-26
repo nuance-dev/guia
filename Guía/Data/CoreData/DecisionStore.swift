@@ -16,7 +16,7 @@ final class DecisionStore {
     func createDecision(_ decision: Decision) async throws -> NSManagedObjectID {
         try await backgroundContext.perform {
             let entity = DecisionEntity(context: self.backgroundContext)
-            entity.configure(with: decision)
+            try entity.configure(with: decision)
             try self.backgroundContext.save()
             return entity.objectID
         }
@@ -26,7 +26,7 @@ final class DecisionStore {
         guard let entity = try viewContext.existingObject(with: id) as? DecisionEntity else {
             throw StoreError.fetchFailed
         }
-        return entity.toDomain()
+        return try entity.toDomain()
     }
     
     func updateDecision(_ decision: Decision) async throws {
@@ -38,7 +38,7 @@ final class DecisionStore {
                 throw StoreError.updateFailed
             }
             
-            entity.configure(with: decision)
+            try entity.configure(with: decision)
             try self.backgroundContext.save()
         }
     }
