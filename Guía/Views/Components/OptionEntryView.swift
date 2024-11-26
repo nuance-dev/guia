@@ -3,13 +3,14 @@ import SwiftUI
 struct OptionEntryView: View {
     @Binding var firstOption: Option
     @Binding var secondOption: Option
-    @State private var thirdOption: Option = Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
     @EnvironmentObject private var flowManager: DecisionFlowManager
-    @State private var activeField = 0
+    
     @FocusState private var focusedField: Int?
+    @State private var activeField = 0
     @State private var showComparison = false
     @State private var optionsComplete = false
     @State private var showThirdOption = false
+    @State private var thirdOption = Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
@@ -18,27 +19,26 @@ struct OptionEntryView: View {
                 Text(headerText)
                     .font(.system(size: 32, weight: .medium))
                     .foregroundColor(.white)
-                    .transition(.opacity)
                 
                 Text(subheaderText)
                     .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.6))
-                    .transition(.opacity)
             }
             
-            // Options stack
+            // Option Fields
             VStack(spacing: 16) {
                 optionField(
                     text: $firstOption.name,
-                    placeholder: "First option",
+                    placeholder: "e.g. Stay at current job",
                     fieldIndex: 0
                 )
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .opacity(activeField >= 0 ? 1 : 0)
+                .animation(.easeInOut(duration: 0.3), value: activeField)
                 
-                if activeField >= 1 || !firstOption.name.isEmpty {
+                if activeField >= 1 {
                     optionField(
                         text: $secondOption.name,
-                        placeholder: "Second option",
+                        placeholder: "e.g. Accept new job offer",
                         fieldIndex: 1
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -47,17 +47,19 @@ struct OptionEntryView: View {
                 if showThirdOption {
                     optionField(
                         text: $thirdOption.name,
-                        placeholder: "Third option (optional)",
+                        placeholder: "e.g. Start my own business",
                         fieldIndex: 2
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
             
-            if !showThirdOption && activeField >= 1 {
+            // Add Option Button
+            if optionsComplete && !showThirdOption && activeField >= 1 {
                 Button(action: {
                     withAnimation(.spring(response: 0.3)) {
                         showThirdOption = true
+                        flowManager.keyboardHandler?.updateState(step: .optionEntry, canProgress: true, canAddMore: false)
                     }
                 }) {
                     Label("Add another option", systemImage: "plus.circle")
@@ -66,6 +68,7 @@ struct OptionEntryView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 8)
+                .transition(.opacity)
             }
             
             Spacer()
@@ -78,6 +81,7 @@ struct OptionEntryView: View {
         }
         .onAppear {
             focusedField = 0
+            flowManager.keyboardHandler?.updateState(step: .optionEntry, canProgress: false, canAddMore: true)
         }
     }
     
@@ -100,16 +104,25 @@ struct OptionEntryView: View {
     private func validateAndProgress(_ value: String, isFirstOption: Bool) {
         guard !value.isEmpty else { return }
         
-        if isFirstOption && activeField == 0 {
+        if isFirstOption && activeField == 0 && value.count >= 3 {
             withAnimation(.spring(response: 0.3)) {
                 activeField = 1
                 focusedField = 1
+                flowManager.keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: false,
+                    canAddMore: true
+                )
             }
         } else if !isFirstOption && value.count >= 3 {
             withAnimation(.spring(response: 0.3)) {
                 showComparison = true
                 optionsComplete = true
-                flowManager.updateProgressibility(true)
+                flowManager.keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: true,
+                    canAddMore: true
+                )
             }
         }
     }
@@ -122,12 +135,11 @@ struct OptionEntryView: View {
                 .textFieldStyle(.plain)
                 .focused($focusedField, equals: fieldIndex)
                 .placeholder(when: text.wrappedValue.isEmpty, placeholder: placeholder)
-                .onSubmit {
-                    if !text.wrappedValue.isEmpty {
+                .onChange(of: text.wrappedValue) { _, newValue in
+                    if newValue.count >= 3 {
                         handleSubmit(fieldIndex)
                     }
                 }
-                .keyboardShortcut(.return, modifiers: [.command])
             
             InputValidationIndicator(isValid: text.wrappedValue.count >= 3)
         }
@@ -138,16 +150,33 @@ struct OptionEntryView: View {
     }
     
     private func handleSubmit(_ fieldIndex: Int) {
-        if fieldIndex == 0 && !firstOption.name.isEmpty {
+        if fieldIndex == 0 && firstOption.name.count >= 3 {
             withAnimation(.spring(response: 0.3)) {
                 activeField = 1
                 focusedField = 1
+                flowManager.keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: false,
+                    canAddMore: true
+                )
             }
-        } else if fieldIndex == 1 && !secondOption.name.isEmpty {
+        } else if fieldIndex == 1 && secondOption.name.count >= 3 {
             withAnimation(.spring(response: 0.3)) {
                 showComparison = true
                 optionsComplete = true
-                flowManager.updateProgressibility(true)
+                flowManager.keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: true,
+                    canAddMore: true
+                )
+            }
+        } else if fieldIndex == 2 && thirdOption.name.count >= 3 {
+            withAnimation(.spring(response: 0.3)) {
+                flowManager.keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: true,
+                    canAddMore: false
+                )
             }
         }
     }

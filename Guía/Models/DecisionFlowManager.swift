@@ -31,7 +31,7 @@ class DecisionFlowManager: ObservableObject {
     @Published var canGoBack = false
     @Published var showResetConfirmation = false
     
-    private var keyboardHandler: KeyboardHandler?
+    var keyboardHandler: KeyboardHandler?
     
     init() {
         setupKeyboardHandler()
@@ -42,17 +42,16 @@ class DecisionFlowManager: ObservableObject {
     private func setupKeyboardHandler() {
         keyboardHandler = KeyboardHandler()
         
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            // Command + Enter to advance step
-            if event.modifierFlags.contains(.command) && event.keyCode == 36 {
-                self?.advanceStep()
-                return nil
-            }
-            return event
-        }
-        
         keyboardHandler?.onEnterPressed = { [weak self] in
             self?.handleEnterPress()
+        }
+        
+        keyboardHandler?.onCommandEnterPressed = { [weak self] in
+            self?.advanceStep()
+        }
+        
+        keyboardHandler?.onTabPressed = { [weak self] in
+            self?.handleTabPress()
         }
     }
     
@@ -71,10 +70,32 @@ class DecisionFlowManager: ObservableObject {
         advanceStep()
     }
     
+    private func handleTabPress() {
+        // Handle tab navigation based on current step
+        // This can be customized per step if needed
+    }
+    
     func updateProgressibility(_ canProgress: Bool) {
         withAnimation(.easeInOut(duration: 0.3)) {
             self.canProgress = canProgress
-            keyboardHandler?.updateProgressibility(canProgress)
+            
+            // Convert current step to KeyboardHandler.DecisionStep
+            let step: KeyboardHandler.DecisionStep
+            switch currentStep {
+            case .initial: step = .initial
+            case .optionEntry: step = .optionEntry
+            case .factorCollection: step = .factorCollection
+            case .weighting: step = .weighting
+            case .scoring: step = .scoring
+            case .analysis: step = .analysis
+            }
+            
+            keyboardHandler?.updateState(
+                step: step,
+                canProgress: canProgress,
+                canAddMore: currentStep == .optionEntry,
+                isCompareMode: currentStep == .scoring
+            )
         }
     }
     
@@ -131,13 +152,45 @@ class DecisionFlowManager: ObservableObject {
     private func updateProgress() {
         let steps = DecisionStep.allCases
         if let currentIndex = steps.firstIndex(of: currentStep) {
-            progress = CGFloat(currentIndex) / CGFloat(steps.count - 1)
+            withAnimation(.easeInOut(duration: 0.3)) {
+                progress = CGFloat(currentIndex) / CGFloat(steps.count - 1)
+            }
         }
     }
     
     private func updateNavigationState() {
-        canGoBack = currentStep.previousStep != nil
-        // Other navigation state updates...
+        withAnimation(.easeInOut(duration: 0.3)) {
+            canGoBack = currentStep.previousStep != nil
+            canProgress = false // Reset progress state on step change
+            
+            // Set initial state based on current step
+            switch currentStep {
+            case .initial:
+                keyboardHandler?.updateState(
+                    step: .initial,
+                    canProgress: false,
+                    canAddMore: false
+                )
+            case .optionEntry:
+                keyboardHandler?.updateState(
+                    step: .optionEntry,
+                    canProgress: false,
+                    canAddMore: true
+                )
+            case .scoring:
+                keyboardHandler?.updateState(
+                    step: .scoring,
+                    canProgress: false,
+                    canAddMore: false,
+                    isCompareMode: true
+                )
+            default:
+                keyboardHandler?.updateState(
+                    step: .factorCollection,
+                    canProgress: false
+                )
+            }
+        }
     }
     
     func resetFlow() {
@@ -146,6 +199,7 @@ class DecisionFlowManager: ObservableObject {
             progress = 0.0
             canProgress = false
             canGoBack = false
+            keyboardHandler?.updateState(step: .optionEntry, canProgress: false, canAddMore: true)
         }
     }
     
