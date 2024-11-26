@@ -1,47 +1,53 @@
 import SwiftUI
-import AppKit
 
 @main
-struct GuíaApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @AppStorage("isDarkMode") private var isDarkMode = false
-    @StateObject private var updater = UpdateChecker()
-    @State private var showingUpdateSheet = false
+struct GuiaApp: App {
+    @StateObject private var decisionEngine = DecisionEngine()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(isDarkMode ? .dark : .light)
-                .background(WindowAccessor())
-                .sheet(isPresented: $showingUpdateSheet) {
-                    // Replace with a simple update view if needed
-                }
-                .onAppear {
-                    updater.checkForUpdates()
-                    updater.onUpdateAvailable = {
-                        showingUpdateSheet = true
-                    }
-                }
+                .environmentObject(decisionEngine)
+                .preferredColorScheme(.dark)
+                .frame(minWidth: 800, minHeight: 600)
         }
-        .windowStyle(HiddenTitleBarWindowStyle())
+        .windowStyle(.hiddenTitleBar)
         .commands {
-            CommandGroup(after: .appInfo) {
-                Button("Check for Updates...") {
-                    showingUpdateSheet = true
-                    updater.checkForUpdates()
-                }
-                .keyboardShortcut("U", modifiers: [.command])
-                
-                if updater.updateAvailable {
-                    Button("Download Update") {
-                        if let url = updater.downloadURL {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                }
-                
-                Divider()
-            }
+            CommandGroup(replacing: .newItem) { }
         }
     }
+}
+
+class DecisionEngine: ObservableObject {
+    @Published var currentStep: DecisionStep = .initial
+    @Published var options: [DecisionOption] = []
+    @Published var analysis: DecisionAnalysis?
+    @Published var isProcessing = false
+    
+    enum DecisionStep {
+        case initial
+        case inputting
+        case analyzing
+        case result
+    }
+}
+
+struct DecisionOption: Identifiable, Hashable {
+    let id = UUID()
+    var title: String
+    var description: String
+    var pros: [String] = []
+    var cons: [String] = []
+    var score: Double = 0
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+struct DecisionAnalysis {
+    var recommendation: String
+    var confidence: Double
+    var reasoning: [String]
+    var timestamp: Date
 }

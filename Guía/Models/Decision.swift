@@ -1,199 +1,118 @@
 import Foundation
-import CoreData
 
-// MARK: - Decision Model
-public struct Decision: Identifiable, Codable, Hashable {
-    public let id: UUID
-    public var title: String
-    public var description: String?
-    public var context: DecisionContext
-    public var options: [OptionModel]
-    public var criteria: [UnifiedCriterion]
-    public var weights: [UUID: Double]
-    public var evaluation: Evaluation
-    public var insights: [Insight]
-    public var pairwiseComparisons: [[Double]]?
-    public var analysisResults: AnalysisResults?
-    public var state: DecisionState
-    public var created: Date
-    public var modified: Date
+struct Decision: Identifiable, Codable {
+    let id: UUID
+    var title: String
+    var description: String?
+    var options: [Option]
+    var criteria: [Criterion]
+    var created: Date
+    var modified: Date
     
-    // MARK: - Insight Model
-    public struct Insight: Codable {
-        public var type: InsightType
-        public var message: String
-        public var recommendation: String?
+    struct Option: Identifiable, Codable {
+        let id: UUID
+        var name: String
+        var description: String?
+        var scores: [UUID: Double]
         
-        public enum InsightType: String, Codable {
-            case pattern
-            case bias
-            case suggestion
-            case warning
-        }
-        
-        public init(type: InsightType, message: String, recommendation: String? = nil) {
-            self.type = type
-            self.message = message
-            self.recommendation = recommendation
+        init(id: UUID = UUID(), name: String, description: String? = nil) {
+            self.id = id
+            self.name = name
+            self.description = description
+            self.scores = [:]
         }
     }
     
-    // MARK: - Hashable Conformance
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    public static func == (lhs: Decision, rhs: Decision) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    // MARK: - Weight Management
-    public func normalizeWeights() -> [UUID: Double] {
-        let totalWeight = weights.values.reduce(0.0, +)
-        guard totalWeight > 0 else { return [:] }
-        return weights.mapValues { $0 / totalWeight }
-    }
-    
-    public func validateWeights() -> Bool {
-        let totalWeight = weights.values.reduce(0.0, +)
-        return abs(totalWeight - 1.0) < 0.001 && weights.values.allSatisfy { $0 >= 0 }
-    }
-    
-    // MARK: - Evaluation
-    public struct Evaluation: Codable {
-        public var criteria: [UnifiedCriterion]
-        public var scores: [UUID: Score]
+    struct Criterion: Identifiable, Codable {
+        let id: UUID
+        var name: String
+        var description: String?
+        var weight: Double
         
-        public struct Score: Codable {
-            public var rating: Double
-            public var confidence: Double
-            public var notes: String?
-            
-            public init(rating: Double, confidence: Double, notes: String? = nil) {
-                self.rating = rating
-                self.confidence = confidence
-                self.notes = notes
-            }
+        init(id: UUID = UUID(), name: String, description: String? = nil, weight: Double = 1.0) {
+            self.id = id
+            self.name = name
+            self.description = description
+            self.weight = weight
         }
+    }
+    
+    struct Analysis: Codable {
+        var recommendedOption: UUID
+        var confidence: Double
+        var reasoning: String
+        var scores: [UUID: Double]
         
-        public var isComplete: Bool {
-            guard !criteria.isEmpty else { return false }
-            return criteria.allSatisfy { criterion in
-                scores[criterion.id] != nil
-            }
-        }
-        
-        public init(criteria: [UnifiedCriterion], scores: [UUID: Score]) {
-            self.criteria = criteria
+        init(recommendedOption: UUID, confidence: Double, reasoning: String, scores: [UUID: Double]) {
+            self.recommendedOption = recommendedOption
+            self.confidence = confidence
+            self.reasoning = reasoning
             self.scores = scores
         }
     }
     
-    // MARK: - Context
-    public struct DecisionContext: Codable {
-        public var timeframe: Timeframe
-        public var impact: Impact
-        public var reversibility: Bool
+    var analysis: Analysis? {
+        guard !options.isEmpty && !criteria.isEmpty else { return nil }
         
-        public enum Timeframe: String, Codable {
-            case immediate
-            case shortTerm
-            case longTerm
+        // Calculate weighted scores
+        var optionScores: [UUID: Double] = [:]
+        for option in options {
+            var totalScore = 0.0
+            var totalWeight = 0.0
             
-            public var suggestedApproach: String {
-                switch self {
-                case .immediate: return "Focus on gut feeling and quick pros/cons"
-                case .shortTerm: return "Balance data with intuition"
-                case .longTerm: return "Prioritize thorough analysis and future implications"
-                }
+            for criterion in criteria {
+                let score = option.scores[criterion.id] ?? 0
+                totalScore += score * criterion.weight
+                totalWeight += criterion.weight
             }
+            
+            optionScores[option.id] = totalWeight > 0 ? totalScore / totalWeight : 0
         }
         
-        public enum Impact: String, Codable {
-            case low, medium, high
-        }
+        // Find best option
+        guard let bestOption = optionScores.max(by: { $0.value < $1.value }) else { return nil }
         
-        public init(timeframe: Timeframe, impact: Impact, reversibility: Bool) {
-            self.timeframe = timeframe
-            self.impact = impact
-            self.reversibility = reversibility
-        }
+        // Calculate confidence based on score spread
+        let scoreSpread = optionScores.values.max()! - optionScores.values.min()!
+        let confidence = min(1.0, scoreSpread * 2) // Higher spread = higher confidence
+        
+        // Generate reasoning
+        let reasoning = generateReasoning(bestOptionId: bestOption.key, scores: optionScores)
+        
+        return Analysis(
+            recommendedOption: bestOption.key,
+            confidence: confidence,
+            reasoning: reasoning,
+            scores: optionScores
+        )
     }
     
-    // MARK: - Confidence Metrics
-    public struct ConfidenceMetrics: Codable {
-        public var dataQuality: Double
-        public var biasAwareness: Double
-        public var stakeholderCoverage: Double
-        public var criteriaCompleteness: Double
+    private func generateReasoning(bestOptionId: UUID, scores: [UUID: Double]) -> String {
+        guard let bestOption = options.first(where: { $0.id == bestOptionId }) else { return "" }
         
-        public var overallConfidence: Double {
-            return (dataQuality + biasAwareness + stakeholderCoverage + criteriaCompleteness) / 4.0
-        }
+        let strengths = criteria.filter { criterion in
+            bestOption.scores[criterion.id] ?? 0 >= 0.7
+        }.map { $0.name }
         
-        public init(dataQuality: Double, biasAwareness: Double, stakeholderCoverage: Double, criteriaCompleteness: Double) {
-            self.dataQuality = dataQuality
-            self.biasAwareness = biasAwareness
-            self.stakeholderCoverage = stakeholderCoverage
-            self.criteriaCompleteness = criteriaCompleteness
-        }
+        return """
+        \(bestOption.name) is recommended because it performs well in \
+        \(strengths.joined(separator: ", ")).
+        """
     }
     
-    // MARK: - Initialize
-    public init(
+    init(
         id: UUID = UUID(),
         title: String,
         description: String? = nil,
-        context: DecisionContext = DecisionContext(timeframe: .immediate, impact: .medium, reversibility: true),
-        options: [OptionModel] = [],
-        criteria: [UnifiedCriterion] = [],
-        weights: [UUID: Double] = [:],
-        evaluation: Evaluation = Evaluation(criteria: [], scores: [:]),
-        insights: [Insight] = [],
-        pairwiseComparisons: [[Double]]? = nil,
-        analysisResults: AnalysisResults? = nil,
-        state: DecisionState = .empty,
-        created: Date = Date(),
-        modified: Date = Date()
+        options: [Option] = [],
+        criteria: [Criterion] = []
     ) {
         self.id = id
         self.title = title
         self.description = description
-        self.context = context
         self.options = options
         self.criteria = criteria
-        self.weights = weights
-        self.evaluation = evaluation
-        self.insights = insights
-        self.pairwiseComparisons = pairwiseComparisons
-        self.analysisResults = analysisResults
-        self.state = state
-        self.created = created
-        self.modified = modified
-    }
-}
-
-// MARK: - Supporting Types
-public enum DecisionState: String, Codable {
-    case empty
-    case incomplete
-    case ready
-    case analyzed
-}
-
-// MARK: - Option Model
-public struct OptionModel: Identifiable, Codable {
-    public let id: UUID
-    public var name: String
-    public var description: String?
-    public var scores: [UUID: Double]
-    public var notes: String?
-    
-    public init(id: UUID = UUID(), name: String, description: String? = nil, scores: [UUID: Double] = [:], notes: String? = nil) {
-        self.id = id
-        self.name = name
-        self.description = description
-        self.scores = scores
-        self.notes = notes
+        self.created = Date()
+        self.modified = Date()
     }
 }
