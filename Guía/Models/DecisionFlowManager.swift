@@ -33,6 +33,7 @@ class DecisionFlowManager: ObservableObject {
     
     init() {
         setupKeyboardHandler()
+        setupEscapeKeyMonitoring()
         updateNavigationState()
     }
     
@@ -40,6 +41,16 @@ class DecisionFlowManager: ObservableObject {
         keyboardHandler = KeyboardHandler()
         keyboardHandler?.onEnterPressed = { [weak self] in
             self?.handleEnterPress()
+        }
+    }
+    
+    private func setupEscapeKeyMonitoring() {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 { // ESC key
+                self?.goBack()
+                return nil
+            }
+            return event
         }
     }
     
@@ -85,7 +96,7 @@ class DecisionFlowManager: ObservableObject {
     }
     
     func goBack() {
-        guard let previousStep = currentStep.previousStep else { return }
+        guard canGoBack, let previousStep = currentStep.previousStep else { return }
         withAnimation(.spring(response: 0.3)) {
             currentStep = previousStep
             updateProgress()

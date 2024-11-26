@@ -1,15 +1,51 @@
 import Foundation
 
 class DecisionContext: ObservableObject {
+    @Published var options: [Option] = []
     @Published var currentStep: DecisionStep = .firstOption
-    @Published var firstOption: Option
-    @Published var secondOption: Option
     @Published var canProceed: Bool = false
     
+    private let maxOptions = 3
+    
     init() {
-        // Initialize with empty options
-        self.firstOption = Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
-        self.secondOption = Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+        self.options = []
+    }
+    
+    func addOption(_ name: String) {
+        guard options.count < maxOptions else { return }
+        let newOption = Option(
+            name: name,
+            factors: [],
+            timeframe: .immediate,
+            riskLevel: .medium
+        )
+        options.append(newOption)
+        updateCanProceed()
+    }
+    
+    private func updateCanProceed() {
+        switch currentStep {
+        case .firstOption:
+            canProceed = options.first != nil && !options.first!.name.isEmpty
+        case .secondOption:
+            canProceed = options.count > 1 && !options[1].name.isEmpty
+        case .factorInput:
+            canProceed = options.count > 1 && options.allSatisfy { !$0.factors.isEmpty }
+        case .factorWeighting:
+            canProceed = true
+        case .timeframeSelection:
+            canProceed = true
+        case .riskAssessment:
+            canProceed = true
+        case .scoring:
+            canProceed = true
+        case .review:
+            canProceed = false
+        }
+    }
+    
+    func canAddMoreOptions() -> Bool {
+        return options.count < maxOptions
     }
     
     enum DecisionStep {
@@ -57,8 +93,8 @@ class DecisionContext: ObservableObject {
     }
     
     func calculateConfidence() -> Double {
-        let factorWeightSum = firstOption.factors.reduce(0) { $0 + $1.weight }
-        let scoreSum = firstOption.factors.reduce(0) { $0 + ($1.weight * $1.score) }
+        let factorWeightSum = options.reduce(0) { $0 + $1.factors.reduce(0) { $0 + $1.weight } }
+        let scoreSum = options.reduce(0) { $0 + ($1.factors.reduce(0) { $0 + ($1.weight * $1.score) }) }
         
         // Normalize to 0-1 range
         let normalizedScore = (scoreSum / factorWeightSum + 1) / 2
@@ -71,7 +107,8 @@ class DecisionContext: ObservableObject {
     }
     
     private func calculateRiskAdjustment() -> Double {
-        switch firstOption.riskLevel {
+        let riskLevel = options.reduce(.medium) { $1.riskLevel }
+        switch riskLevel {
         case .veryLow: return 1.2
         case .low: return 1.1
         case .medium: return 1.0
@@ -81,32 +118,12 @@ class DecisionContext: ObservableObject {
     }
     
     private func calculateTimeframeAdjustment() -> Double {
-        switch firstOption.timeframe {
+        let timeframe = options.reduce(.immediate) { $1.timeframe }
+        switch timeframe {
         case .immediate: return 1.1
         case .shortTerm: return 1.05
         case .mediumTerm: return 1.0
         case .longTerm: return 0.95
-        }
-    }
-    
-    private func updateCanProceed() {
-        switch currentStep {
-        case .firstOption:
-            canProceed = !firstOption.name.isEmpty
-        case .secondOption:
-            canProceed = !secondOption.name.isEmpty
-        case .factorInput:
-            canProceed = firstOption.factors.count > 0 && secondOption.factors.count > 0
-        case .factorWeighting:
-            canProceed = true // Can always proceed after weighting
-        case .timeframeSelection:
-            canProceed = true
-        case .riskAssessment:
-            canProceed = true
-        case .scoring:
-            canProceed = true
-        case .review:
-            canProceed = false // No more steps after review
         }
     }
 } 

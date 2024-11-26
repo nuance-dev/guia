@@ -3,7 +3,6 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var decisionContext = DecisionContext()
     @StateObject private var flowManager = DecisionFlowManager()
-    @State private var showEnterHint = false
     
     var body: some View {
         ZStack {
@@ -25,23 +24,42 @@ struct ContentView: View {
                 }
             }
             
-            // Subtle enter hint
-            if flowManager.canProgress {
-                VStack {
-                    Spacer()
-                    HStack {
+            // Navigation hints
+            ZStack {
+                // Back hint
+                if flowManager.canGoBack {
+                    VStack {
                         Spacer()
-                        Text("press enter ⏎")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.3))
-                            .padding(.trailing, 16)
-                            .padding(.bottom, 16)
+                        HStack {
+                            Text("← press esc to go back")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.3))
+                                .padding(.leading, 16)
+                                .padding(.bottom, 16)
+                            Spacer()
+                        }
                     }
                 }
-                .transition(.opacity)
+                
+                // Progress hint
+                if flowManager.canProgress {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Text("press enter ⏎")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.3))
+                                .padding(.trailing, 16)
+                                .padding(.bottom, 16)
+                        }
+                    }
+                }
             }
+            .transition(.opacity)
         }
         .environmentObject(flowManager)
+        .environmentObject(decisionContext)
         .preferredColorScheme(.dark)
     }
     
@@ -51,34 +69,65 @@ struct ContentView: View {
         case .initial:
             InitialPromptView()
         case .optionEntry:
-            OptionEntryView(
-                firstOption: $decisionContext.firstOption,
-                secondOption: $decisionContext.secondOption
-            )
+            if decisionContext.options.count < 2 {
+                // Initialize with empty options if needed
+                let firstOption = decisionContext.options.first ?? Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+                let secondOption = decisionContext.options.count > 1 ? decisionContext.options[1] : Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+                
+                OptionEntryView(
+                    firstOption: Binding(
+                        get: { firstOption },
+                        set: { newValue in
+                            if decisionContext.options.isEmpty {
+                                decisionContext.options.append(newValue)
+                            } else {
+                                decisionContext.options[0] = newValue
+                            }
+                        }
+                    ),
+                    secondOption: Binding(
+                        get: { secondOption },
+                        set: { newValue in
+                            if decisionContext.options.count < 2 {
+                                decisionContext.options.append(newValue)
+                            } else {
+                                decisionContext.options[1] = newValue
+                            }
+                        }
+                    )
+                )
+            }
         case .factorCollection:
-            FactorCollectionView(factors: $decisionContext.firstOption.factors)
+            if let firstOption = decisionContext.options.first {
+                FactorCollectionView(factors: .init(
+                    get: { firstOption.factors },
+                    set: { newValue in
+                        if var option = decisionContext.options.first {
+                            option.factors = newValue
+                            decisionContext.options[0] = option
+                        }
+                    }
+                ))
+            }
         case .weighting:
-            WeightingView(factors: $decisionContext.firstOption.factors)
+            if let firstOption = decisionContext.options.first {
+                WeightingView(factors: .init(
+                    get: { firstOption.factors },
+                    set: { newValue in
+                        if var option = decisionContext.options.first {
+                            option.factors = newValue
+                            decisionContext.options[0] = option
+                        }
+                    }
+                ))
+            }
         case .analysis:
-            AnalysisView(
-                options: [decisionContext.firstOption, decisionContext.secondOption],
-                factors: decisionContext.firstOption.factors
-            )
-        }
-    }
-    
-    private func updateDecisionContext() {
-        switch flowManager.currentStep {
-        case .initial:
-            decisionContext.currentStep = .firstOption
-        case .optionEntry:
-            decisionContext.currentStep = .secondOption
-        case .factorCollection:
-            decisionContext.currentStep = .factorInput
-        case .weighting:
-            decisionContext.currentStep = .factorWeighting
-        case .analysis:
-            decisionContext.currentStep = .review
+            if let firstOption = decisionContext.options.first {
+                AnalysisView(
+                    options: decisionContext.options,
+                    factors: firstOption.factors
+                )
+            }
         }
     }
 }

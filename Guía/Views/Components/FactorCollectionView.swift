@@ -16,9 +16,9 @@ struct FactorCollectionView: View {
         VStack(alignment: .leading, spacing: 24) {
             headerSection
             
-            if factors.isEmpty {
-                suggestionsGrid
-            }
+            // Always show suggestions with reduced spacing
+            suggestionsGrid
+                .padding(.bottom, 8)
             
             factorList
             
@@ -26,33 +26,31 @@ struct FactorCollectionView: View {
                 factorInput
             }
             
-            navigationSection
+            Spacer()
         }
         .onChange(of: factors.count) { _, count in
             flowManager.updateProgressibility(count >= 2)
         }
     }
     
-    private var navigationSection: some View {
-        HStack {
-            Button(action: { flowManager.goBack() }) {
-                HStack {
-                    Image(systemName: "arrow.left")
-                    Text("Back")
+    private var suggestionsGrid: some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 100))],
+            spacing: 6
+        ) {
+            ForEach(suggestions.filter { suggestion in
+                !factors.contains { $0.name == suggestion }
+            }, id: \.self) { suggestion in
+                Button(action: { addSuggestion(suggestion) }) {
+                    Text(suggestion)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.6))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.03))
+                        .cornerRadius(4)
                 }
-                .foregroundColor(.white.opacity(0.6))
-            }
-            .opacity(flowManager.canGoBack ? 1 : 0)
-            
-            Spacer()
-            
-            if factors.count >= 2 {
-                Button("Continue", action: { flowManager.advanceStep() })
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.accentColor)
-                    .cornerRadius(6)
+                .buttonStyle(.plain)
             }
         }
     }
@@ -136,23 +134,6 @@ struct FactorCollectionView: View {
             .keyboardShortcut(.return, modifiers: [])
             .disabled(newFactorName.isEmpty)
         }
-    }
-    
-    private var suggestionsGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 8) {
-            ForEach(suggestions, id: \.self) { suggestion in
-                Button(action: { addSuggestion(suggestion) }) {
-                    Text(suggestion)
-                        .foregroundColor(.white.opacity(0.8))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.03))
-                        .cornerRadius(6)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.vertical, 8)
     }
     
     private func addFactor() {
