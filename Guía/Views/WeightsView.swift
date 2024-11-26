@@ -27,7 +27,9 @@ struct WeightsView: View {
                             weight: Binding(
                                 get: { viewModel.decision.weights[criterion.id] ?? 1.0 },
                                 set: { newValue in
-                                    viewModel.decision.weights[criterion.id] = newValue
+                                    Task {
+                                        try? await viewModel.updateWeight(for: criterion, to: newValue)
+                                    }
                                 }
                             )
                         )

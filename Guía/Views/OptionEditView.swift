@@ -15,6 +15,24 @@ struct OptionEditView: View {
     let mode: Mode
     let onSave: (OptionModel) -> Void
     
+    private var navigationTitle: String {
+        switch mode {
+        case .add:
+            return "Add Option"
+        case .edit:
+            return "Edit Option"
+        }
+    }
+    
+    private var buttonTitle: String {
+        switch mode {
+        case .add:
+            return "Add"
+        case .edit:
+            return "Save"
+        }
+    }
+    
     init(mode: Mode, onSave: @escaping (OptionModel) -> Void) {
         self.mode = mode
         self.onSave = onSave
@@ -36,7 +54,7 @@ struct OptionEditView: View {
                 TextField("Notes (optional)", text: $notes)
             }
         }
-        .navigationTitle(mode == .add ? "Add Option" : "Edit Option")
+        .navigationTitle(navigationTitle)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -45,7 +63,7 @@ struct OptionEditView: View {
             }
             
             ToolbarItem(placement: .confirmationAction) {
-                Button(mode == .add ? "Add" : "Save") {
+                Button(buttonTitle) {
                     let option = OptionModel(
                         name: name,
                         description: description.isEmpty ? nil : description,
@@ -59,4 +77,4 @@ struct OptionEditView: View {
             }
         }
     }
-} 
+}

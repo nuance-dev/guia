@@ -22,17 +22,28 @@ struct CriterionEditView: View {
             .pickerStyle(.segmented)
         }
         .navigationTitle("New Criterion")
-        .navigationBarItems(trailing: Button("Save") {
-            guard !name.isEmpty else { return }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
             
-            let criterion = BasicCriterion(
-                name: name,
-                description: description.isEmpty ? nil : description,
-                importance: importance,
-                unit: unit.isEmpty ? nil : unit
-            )
-            onSave(criterion)
-            dismiss()
-        })
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    guard !name.isEmpty else { return }
+                    
+                    let criterion = BasicCriterion(
+                        name: name,
+                        description: description.isEmpty ? nil : description,
+                        importance: importance,
+                        unit: unit.isEmpty ? nil : unit
+                    )
+                    onSave(criterion)
+                    dismiss()
+                }
+                .disabled(name.isEmpty)
+            }
+        }
     }
 } 

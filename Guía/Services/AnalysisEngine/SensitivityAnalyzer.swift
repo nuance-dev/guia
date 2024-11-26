@@ -66,7 +66,8 @@ final class SensitivityAnalyzer {
             // Calculate sensitivity metrics
             let sensitivity = calculateSensitivityMetrics(
                 criterion: criterion,
-                variations: weightVariations
+                variations: weightVariations,
+                options: options
             )
             
             sensitivityData.append(sensitivity)
@@ -131,7 +132,8 @@ final class SensitivityAnalyzer {
     
     private func calculateSensitivityMetrics(
         criterion: any Criterion,
-        variations: [WeightVariation]
+        variations: [WeightVariation],
+        options: [Option]
     ) -> CriterionSensitivity {
         // Calculate baseline rankings
         let baselineScores = variations.first?.scores ?? []
@@ -156,8 +158,8 @@ final class SensitivityAnalyzer {
                         if (baselineScores[i] > baselineScores[j]) != 
                            (variation.scores[i] > variation.scores[j]) {
                             rankReversals.append(RankReversal(
-                                option1: Option(id: UUID(), title: "Option \(i)"),
-                                option2: Option(id: UUID(), title: "Option \(j)"),
+                                option1: options[i],
+                                option2: options[j],
                                 weightThreshold: variation.delta
                             ))
                         }

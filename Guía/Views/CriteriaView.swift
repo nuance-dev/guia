@@ -27,32 +27,9 @@ struct CriteriaView: View {
             } else {
                 List {
                     ForEach(viewModel.decision.criteria) { criterion in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(criterion.name)
-                                .font(.headline)
-                            
-                            if let description = criterion.description {
-                                Text(description)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            if let unit = criterion.unit {
-                                Text("Unit: \(unit)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            HStack {
-                                Label(
-                                    criterion.importance.rawValue.capitalized,
-                                    systemImage: importanceIcon(for: criterion.importance)
-                                )
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
+                        if let basicCriterion = criterion as? BasicCriterion {
+                            CriterionRow(criterion: basicCriterion)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -61,10 +38,46 @@ struct CriteriaView: View {
         .sheet(isPresented: $showingCriterionSheet) {
             NavigationStack {
                 CriterionEditView { criterion in
-                    viewModel.addCriterion(criterion)
+                    Task {
+                        try? await viewModel.addCriterion(criterion)
+                    }
                 }
             }
         }
+    }
+}
+
+// MARK: - Supporting Views
+struct CriterionRow: View {
+    let criterion: BasicCriterion
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(criterion.name)
+                .font(.headline)
+            
+            if let description = criterion.description {
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            if let unit = criterion.unit {
+                Text("Unit: \(unit)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            HStack {
+                Label(
+                    criterion.importance.rawValue.capitalized,
+                    systemImage: importanceIcon(for: criterion.importance)
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
     
     private func importanceIcon(for importance: BasicCriterion.Importance) -> String {

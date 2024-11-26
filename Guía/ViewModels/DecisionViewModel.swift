@@ -6,7 +6,19 @@ final class DecisionViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var decision: Decision
     @Published private(set) var analysisState: AnalysisState = .idle
+    @Published private(set) var validationResults: ValidationResults?
     @Published var selectedMethod: AnalysisMethod = .simple
+    
+    var validationRecommendations: [String] {
+        guard let results = validationResults else { return [] }
+        return results.validationChecks.filter { !$0.isPassing }.map { check in
+            "\(check.title): \(check.description)"
+        }
+    }
+    
+    var analysisResults: AnalysisResults? {
+        decision.analysisResults
+    }
     
     // MARK: - Dependencies
     private let analysisEngine: AnalysisEngine
@@ -62,6 +74,12 @@ final class DecisionViewModel: ObservableObject {
     // MARK: - Public Methods
     func addOption(_ option: OptionModel) async throws {
         decision.options.append(option)
+        decision.modified = Date()
+        try await storageService.updateDecision(decision)
+    }
+    
+    func updateOptions(_ options: [OptionModel]) async throws {
+        decision.options = options
         decision.modified = Date()
         try await storageService.updateDecision(decision)
     }
@@ -169,16 +187,42 @@ final class DecisionViewModel: ObservableObject {
     }
     
     private func validateDecision() {
-        // Validate decision completeness and quality
-        let hasMinimumOptions = decision.options.count >= 2
-        let hasMinimumCriteria = decision.criteria.count >= 1
+        // Create validation checks
+        var checks = [ValidationCheck]()
+        
+        // Check minimum options
+        checks.append(ValidationCheck(
+            title: "Minimum Options",
+            description: "Decision should have at least 2 options",
+            isPassing: decision.options.count >= 2
+        ))
+        
+        // Check minimum criteria
+        checks.append(ValidationCheck(
+            title: "Minimum Criteria",
+            description: "Decision should have at least 1 criterion",
+            isPassing: decision.criteria.count >= 1
+        ))
+        
+        // Check complete scores
         let hasCompleteScores = decision.options.allSatisfy { option in
             decision.criteria.allSatisfy { criterion in
                 option.scores[criterion.id] != nil
             }
         }
+        checks.append(ValidationCheck(
+            title: "Complete Scores",
+            description: "All options should have scores for all criteria",
+            isPassing: hasCompleteScores
+        ))
         
-        if !hasMinimumOptions || !hasMinimumCriteria || !hasCompleteScores {
+        // Update validation results
+        validationResults = ValidationResults(
+            validationChecks: checks,
+            isValid: checks.allSatisfy(\.isPassing)
+        )
+        
+        if !checks.allSatisfy(\.isPassing) {
             analysisState = .error(DecisionError.validationFailed)
         }
     }

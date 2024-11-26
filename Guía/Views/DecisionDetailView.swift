@@ -10,6 +10,12 @@ struct DecisionDetailView: View {
         self._viewModel = StateObject(wrappedValue: DecisionViewModel(decision: decision))
     }
     
+    // For previews and testing
+    init(viewModel: DecisionViewModel) {
+        self.decision = viewModel.decision
+        self._viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -69,7 +75,7 @@ struct DecisionDetailView: View {
     private var stageContent: some View {
         switch selectedStage {
         case .problem:
-            ProblemDefinitionView(viewModel: viewModel)
+            ProblemDefinitionView(decision: decision)
         case .stakeholders:
             StakeholderView(decision: decision)
         case .options:
@@ -79,7 +85,7 @@ struct DecisionDetailView: View {
         case .weights:
             WeightsView(viewModel: viewModel)
         case .analysis:
-            AnalysisView(viewModel: viewModel)
+            AnalysisView(viewModel: DecisionViewModel(decision: decision))
         case .refinement:
             RefinementView(viewModel: viewModel)
         case .validation:
