@@ -2,42 +2,47 @@ import SwiftUI
 
 struct FactorScoringView: View {
     @Binding var options: [Option]
+    @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var currentFactorIndex = 0
     @State private var showingComparison = false
-    @EnvironmentObject private var flowManager: DecisionFlowManager
-    @EnvironmentObject private var decisionContext: DecisionContext
     
     private var currentFactor: Factor? {
-        guard !options.isEmpty,
-              let firstOption = options.first,
-              currentFactorIndex < firstOption.factors.count
-        else { return nil }
+        guard let firstOption = options.first,
+              currentFactorIndex < firstOption.factors.count else { return nil }
         return firstOption.factors[currentFactorIndex]
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
             // Header
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Compare Options")
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundColor(.white)
-                
+            VStack(alignment: .leading, spacing: 12) {
                 if let factor = currentFactor {
-                    Text("How does each option compare for '\(factor.name)'?")
+                    Text("How well does each option satisfy:")
                         .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.6))
+                    
+                    Text(factor.name)
+                        .font(.system(size: 32, weight: .medium))
+                        .foregroundColor(.white)
                 }
             }
             
-            // Progress indicator
+            // Progress indicator with labels
             if let firstOption = options.first, !firstOption.factors.isEmpty {
-                HStack(spacing: 4) {
-                    ForEach(0..<firstOption.factors.count, id: \.self) { index in
-                        Circle()
-                            .fill(Color.white.opacity(index == currentFactorIndex ? 0.8 : 0.2))
-                            .frame(width: 6, height: 6)
+                VStack(spacing: 8) {
+                    // Factor progress dots
+                    HStack(spacing: 4) {
+                        ForEach(0..<firstOption.factors.count, id: \.self) { index in
+                            Circle()
+                                .fill(Color.white.opacity(index == currentFactorIndex ? 0.8 : 0.2))
+                                .frame(width: 6, height: 6)
+                        }
                     }
+                    
+                    // Factor progress text
+                    Text("Factor \(currentFactorIndex + 1) of \(firstOption.factors.count)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.6))
                 }
             }
             
@@ -53,25 +58,54 @@ struct FactorScoringView: View {
                     }
                 }
                 .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-            
-            Spacer()
-            
-            // Factor navigation
-            if showingComparison {
-                FactorComparisonGrid(options: options)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            
-            // Help tip
-            if !showingComparison {
-                ContextualHelpView(tip: "Rate how well each option performs for this factor. Consider both positive and negative impacts.")
+                
+                // Navigation buttons
+                HStack {
+                    if currentFactorIndex > 0 {
+                        Button(action: previousFactor) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("Previous")
+                            }
+                            .foregroundColor(.white.opacity(0.6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Spacer()
+                    
+                    if let firstOption = options.first,
+                       currentFactorIndex < firstOption.factors.count - 1 {
+                        Button(action: nextFactor) {
+                            HStack(spacing: 4) {
+                                Text("Next")
+                                Image(systemName: "chevron.right")
+                            }
+                            .foregroundColor(.white)
+                        }
+                        .buttonStyle(.plain)
+                        .keyboardShortcut(.return, modifiers: [])
+                    }
+                }
+                .padding(.top, 16)
             }
         }
-        .onChange(of: currentFactorIndex) { _, _ in
-            withAnimation(.spring(response: 0.3)) {
-                showingComparison = currentFactorIndex >= (options.first?.factors.count ?? 0)
-            }
+        .onAppear {
+            currentFactorIndex = 0
+            checkProgress()
+        }
+    }
+    
+    private func nextFactor() {
+        withAnimation(.spring(response: 0.3)) {
+            currentFactorIndex += 1
+            checkProgress()
+        }
+    }
+    
+    private func previousFactor() {
+        withAnimation(.spring(response: 0.3)) {
+            currentFactorIndex -= 1
             checkProgress()
         }
     }

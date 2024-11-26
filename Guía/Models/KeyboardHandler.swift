@@ -30,37 +30,35 @@ class KeyboardHandler: ObservableObject {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self = self else { return event }
             
-            // Command + Enter always tries to progress if possible
-            if event.modifierFlags.contains(.command) && event.keyCode == 36 {
-                if self.canProgress {
-                    self.onCommandEnterPressed?()
-                    return nil
-                }
-                return event
-            }
-            
             // Tab key for field navigation
             if event.keyCode == 48 {
                 self.onTabPressed?()
                 return nil
             }
             
-            // Plain Enter behavior
-            if event.keyCode == 36 && !event.modifierFlags.contains(.command) {
+            // Enter behavior
+            if event.keyCode == 36 {
                 switch currentStep {
                 case .optionEntry:
-                    // Submit current option if valid
-                    self.onOptionSubmit?(self.activeOptionField)
-                    return nil
+                    // In option entry, plain enter adds new option, cmd+enter continues
+                    if event.modifierFlags.contains(.command) {
+                        if self.canProgress {
+                            self.onCommandEnterPressed?()
+                            return nil
+                        }
+                    } else {
+                        self.onItemAdd?()
+                        return nil
+                    }
                 case .scoring:
-                    // In scoring, if we can progress, enter advances
-                    if self.canProgress {
+                    // In scoring, enter advances to next factor if possible
+                    if !event.modifierFlags.contains(.command) {
                         self.onEnterPressed?()
                         return nil
                     }
                 default:
                     // For other steps, enter advances if we can progress
-                    if self.canProgress {
+                    if !event.modifierFlags.contains(.command) && self.canProgress {
                         self.onEnterPressed?()
                         return nil
                     }

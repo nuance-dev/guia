@@ -180,6 +180,7 @@ struct FloatingContextBar: View {
 struct NavigationHints: View {
     let canGoBack: Bool
     let canProgress: Bool
+    @EnvironmentObject private var flowManager: DecisionFlowManager
     
     var body: some View {
         ZStack {
@@ -209,8 +210,8 @@ struct NavigationHints: View {
                     HStack {
                         Spacer()
                         HStack(spacing: 4) {
-                            Text("continue")
-                            Image(systemName: "return")
+                            Text(navigationHint)
+                            Image(systemName: navigationIcon)
                                 .font(.system(size: 10))
                         }
                         .padding(.horizontal, 8)
@@ -226,5 +227,27 @@ struct NavigationHints: View {
         .font(.system(size: 12))
         .foregroundColor(.white.opacity(0.5))
         .transition(.opacity)
+    }
+    
+    private var navigationHint: String {
+        switch flowManager.currentStep {
+        case .optionEntry:
+            return "⌘ + return to continue"
+        case .scoring:
+            return "return for next"
+        default:
+            return "continue"
+        }
+    }
+    
+    private var navigationIcon: String {
+        switch flowManager.currentStep {
+        case .optionEntry:
+            return "arrow.right"
+        case .scoring:
+            return "chevron.right"
+        default:
+            return "return"
+        }
     }
 }
