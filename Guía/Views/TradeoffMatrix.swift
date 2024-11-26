@@ -55,7 +55,7 @@ struct TradeoffMatrix: View {
     }
     
     private func getOptionName(for id: UUID) -> String {
-        decision.options.first { $0.id == id }?.title ?? "Unknown Option"
+        decision.options.first { $0.id == id }?.name ?? "Unknown Option"
     }
     
     private var criteriaSelection: some View {

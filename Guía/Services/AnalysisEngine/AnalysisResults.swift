@@ -54,7 +54,7 @@ public struct AnalysisResults: Codable {
         confidenceScore = try container.decode(Double.self, forKey: .confidenceScore)
         sensitivityData = try container.decode(SensitivityData.self, forKey: .sensitivityData)
         method = try container.decode(AnalysisMethod.self, forKey: .method)
-        criteria = try container.decode([CriterionModel].self, forKey: .criteria) as [any Criterion]
+        criteria = try container.decode([UnifiedCriterion].self, forKey: .criteria) as [any Criterion]
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -63,7 +63,7 @@ public struct AnalysisResults: Codable {
         try container.encode(confidenceScore, forKey: .confidenceScore)
         try container.encode(sensitivityData, forKey: .sensitivityData)
         try container.encode(method, forKey: .method)
-        try container.encode(criteria as? [CriterionModel] ?? [], forKey: .criteria)
+        try container.encode(criteria as? [UnifiedCriterion] ?? [], forKey: .criteria)
     }
 }
 

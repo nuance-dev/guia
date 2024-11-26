@@ -49,8 +49,20 @@ public class DecisionEntity: NSManagedObject {
         }
         
         let options = try decoder.decode([OptionModel].self, from: optionsData)
-        let criteria = try decoder.decode([BasicCriterion].self, from: criteriaData)
+        let basicCriteria = try decoder.decode([BasicCriterion].self, from: criteriaData)
         let weights = try decoder.decode([UUID: Double].self, from: weightsData)
+        
+        let criteria = basicCriteria.map { basic in
+            UnifiedCriterion(
+                id: basic.id,
+                name: basic.name,
+                description: basic.description,
+                importance: .from(weight: basic.weight),
+                unit: basic.unit,
+                created: Date(),
+                modified: Date()
+            )
+        }
         
         let analysisResults = try analysisResultsData.flatMap { data in
             try decoder.decode(AnalysisResults.self, from: data)

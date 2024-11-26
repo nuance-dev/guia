@@ -127,6 +127,10 @@ public struct Decision: Identifiable, Codable, Hashable {
         public var stakeholderCoverage: Double
         public var criteriaCompleteness: Double
         
+        public var overallConfidence: Double {
+            return (dataQuality + biasAwareness + stakeholderCoverage + criteriaCompleteness) / 4.0
+        }
+        
         public init(dataQuality: Double, biasAwareness: Double, stakeholderCoverage: Double, criteriaCompleteness: Double) {
             self.dataQuality = dataQuality
             self.biasAwareness = biasAwareness
