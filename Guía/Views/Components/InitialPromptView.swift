@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct InitialPromptView: View {
+    @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var decision = ""
-    @Environment(\.dismiss) private var dismiss
+    @State private var isValid = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
@@ -16,11 +17,21 @@ struct InitialPromptView: View {
                     .foregroundColor(.white.opacity(0.6))
             }
             
-            TypewriterTextField(
-                text: $decision,
-                placeholder: "Should I...",
-                onSubmit: { /* Handle submission */ }
-            )
+            HStack {
+                TypewriterTextField(
+                    text: $decision,
+                    placeholder: "Should I...",
+                    onSubmit: { flowManager.advanceStep() }
+                )
+                
+                InputValidationIndicator(isValid: isValid)
+                    .padding(.leading, 8)
+            }
+        }
+        .onChange(of: decision) { _, newValue in
+            let valid = newValue.count >= 3
+            isValid = valid
+            flowManager.updateProgressibility(valid)
         }
     }
 } 

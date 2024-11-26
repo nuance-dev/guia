@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var decisionContext = DecisionContext()
     @StateObject private var flowManager = DecisionFlowManager()
+    @State private var showEnterHint = false
     
     var body: some View {
         ZStack {
@@ -15,21 +16,32 @@ struct ContentView: View {
                 ScrollView {
                     VStack(spacing: 32) {
                         stepContent
-                            .transition(.opacity.combined(with: .move(edge: .trailing)))
-                        
-                        if flowManager.showActionButton {
-                            ActionButton(title: flowManager.actionButtonTitle) {
-                                withAnimation(.spring(response: 0.3)) {
-                                    flowManager.advanceStep()
-                                    updateDecisionContext()
-                                }
-                            }
-                        }
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                     }
                     .padding(24)
                 }
             }
+            
+            // Subtle enter hint
+            if flowManager.canProgress {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text("press enter ⏎")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.3))
+                            .padding(.trailing, 16)
+                            .padding(.bottom, 16)
+                    }
+                }
+                .transition(.opacity)
+            }
         }
+        .environmentObject(flowManager)
         .preferredColorScheme(.dark)
     }
     

@@ -12,6 +12,32 @@ class DecisionFlowManager: ObservableObject {
     @Published var currentStep: DecisionStep = .initial
     @Published var showHelp = false
     @Published var progress: CGFloat = 0.0
+    @Published var canProgress = false
+    
+    private var keyboardHandler: KeyboardHandler?
+    
+    init() {
+        setupKeyboardHandler()
+    }
+    
+    private func setupKeyboardHandler() {
+        keyboardHandler = KeyboardHandler()
+        keyboardHandler?.onEnterPressed = { [weak self] in
+            self?.handleEnterPress()
+        }
+    }
+    
+    private func handleEnterPress() {
+        guard canProgress else { return }
+        advanceStep()
+    }
+    
+    func updateProgressibility(_ canProgress: Bool) {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            self.canProgress = canProgress
+            keyboardHandler?.updateProgressibility(canProgress)
+        }
+    }
     
     var currentHelpTip: String {
         switch currentStep {
