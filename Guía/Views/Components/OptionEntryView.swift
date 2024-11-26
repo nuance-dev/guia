@@ -3,22 +3,24 @@ import SwiftUI
 struct OptionEntryView: View {
     @Binding var firstOption: Option
     @Binding var secondOption: Option
+    @State private var thirdOption: Option = Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
     @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var activeField = 0
     @FocusState private var focusedField: Int?
     @State private var showComparison = false
     @State private var optionsComplete = false
+    @State private var showThirdOption = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
             // Header
             VStack(alignment: .leading, spacing: 12) {
-                Text(activeField == 0 ? "What's your first option?" : "And the alternative?")
+                Text(headerText)
                     .font(.system(size: 32, weight: .medium))
                     .foregroundColor(.white)
                     .transition(.opacity)
                 
-                Text(activeField == 0 ? "Enter your primary choice" : "Enter the option you're comparing against")
+                Text(subheaderText)
                     .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.6))
                     .transition(.opacity)
@@ -26,16 +28,14 @@ struct OptionEntryView: View {
             
             // Options stack
             VStack(spacing: 16) {
-                if activeField >= 0 {
-                    optionField(
-                        text: $firstOption.name,
-                        placeholder: "First option",
-                        fieldIndex: 0
-                    )
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
+                optionField(
+                    text: $firstOption.name,
+                    placeholder: "First option",
+                    fieldIndex: 0
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
                 
-                if activeField >= 1 {
+                if activeField >= 1 || !firstOption.name.isEmpty {
                     optionField(
                         text: $secondOption.name,
                         placeholder: "Second option",
@@ -43,15 +43,29 @@ struct OptionEntryView: View {
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
+                
+                if showThirdOption {
+                    optionField(
+                        text: $thirdOption.name,
+                        placeholder: "Third option (optional)",
+                        fieldIndex: 2
+                    )
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
             
-            if showComparison {
-                // Visual comparison indicator
-                HStack(spacing: 24) {
-                    ComparisonPill(text: firstOption.name, isActive: true)
-                    ComparisonPill(text: secondOption.name, isActive: true)
+            if !showThirdOption && activeField >= 1 {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        showThirdOption = true
+                    }
+                }) {
+                    Label("Add another option", systemImage: "plus.circle")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
                 }
-                .transition(.scale.combined(with: .opacity))
+                .buttonStyle(.plain)
+                .padding(.top, 8)
             }
             
             Spacer()
@@ -64,6 +78,22 @@ struct OptionEntryView: View {
         }
         .onAppear {
             focusedField = 0
+        }
+    }
+    
+    private var headerText: String {
+        switch activeField {
+        case 0: return "What's your first option?"
+        case 1: return "And the alternative?"
+        default: return "Any other option?"
+        }
+    }
+    
+    private var subheaderText: String {
+        switch activeField {
+        case 0: return "Enter your primary choice"
+        case 1: return "Enter the option you're comparing against"
+        default: return "Add another option (optional)"
         }
     }
     
