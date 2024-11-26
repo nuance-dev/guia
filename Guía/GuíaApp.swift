@@ -17,7 +17,6 @@ struct GuiaApp: App {
         }
     }
 }
-
 class DecisionEngine: ObservableObject {
     @Published var currentStep: DecisionStep = .initial
     @Published var options: [DecisionOption] = []
@@ -51,3 +50,4 @@ struct DecisionAnalysis {
     var reasoning: [String]
     var timestamp: Date
 }
+
