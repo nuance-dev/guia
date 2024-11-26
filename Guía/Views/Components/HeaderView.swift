@@ -7,8 +7,8 @@ struct HeaderView: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack {
-                Text("Decision Guide")
-                    .font(.system(size: 14, weight: .medium))
+                Text("Guía")
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
                 
                 Spacer()
