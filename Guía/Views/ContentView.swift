@@ -69,34 +69,32 @@ struct ContentView: View {
         case .initial:
             InitialPromptView()
         case .optionEntry:
-            if decisionContext.options.count < 2 {
-                // Initialize with empty options if needed
-                let firstOption = decisionContext.options.first ?? Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
-                let secondOption = decisionContext.options.count > 1 ? decisionContext.options[1] : Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
-                
-                OptionEntryView(
-                    firstOption: Binding(
-                        get: { firstOption },
-                        set: { newValue in
-                            if decisionContext.options.isEmpty {
-                                decisionContext.options.append(newValue)
-                            } else {
-                                decisionContext.options[0] = newValue
-                            }
+            // Initialize with empty options if needed
+            let firstOption = decisionContext.options.first ?? Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+            let secondOption = decisionContext.options.count > 1 ? decisionContext.options[1] : Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+            
+            OptionEntryView(
+                firstOption: Binding(
+                    get: { firstOption },
+                    set: { newValue in
+                        if decisionContext.options.isEmpty {
+                            decisionContext.options.append(newValue)
+                        } else {
+                            decisionContext.options[0] = newValue
                         }
-                    ),
-                    secondOption: Binding(
-                        get: { secondOption },
-                        set: { newValue in
-                            if decisionContext.options.count < 2 {
-                                decisionContext.options.append(newValue)
-                            } else {
-                                decisionContext.options[1] = newValue
-                            }
+                    }
+                ),
+                secondOption: Binding(
+                    get: { secondOption },
+                    set: { newValue in
+                        if decisionContext.options.count < 2 {
+                            decisionContext.options.append(newValue)
+                        } else {
+                            decisionContext.options[1] = newValue
                         }
-                    )
+                    }
                 )
-            }
+            )
         case .factorCollection:
             if let firstOption = decisionContext.options.first {
                 FactorCollectionView(factors: .init(

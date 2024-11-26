@@ -3,9 +3,11 @@ import SwiftUI
 struct OptionEntryView: View {
     @Binding var firstOption: Option
     @Binding var secondOption: Option
+    @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var activeField = 0
     @FocusState private var focusedField: Int?
     @State private var showComparison = false
+    @State private var optionsComplete = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
@@ -28,7 +30,7 @@ struct OptionEntryView: View {
                     optionField(
                         text: $firstOption.name,
                         placeholder: "First option",
-                        isActive: activeField == 0
+                        fieldIndex: 0
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
@@ -37,7 +39,7 @@ struct OptionEntryView: View {
                     optionField(
                         text: $secondOption.name,
                         placeholder: "Second option",
-                        isActive: activeField == 1
+                        fieldIndex: 1
                     )
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
@@ -51,38 +53,77 @@ struct OptionEntryView: View {
                 }
                 .transition(.scale.combined(with: .opacity))
             }
+            
+            Spacer()
+            
+            if optionsComplete {
+                ActionButton(title: "Continue to Factors") {
+                    flowManager.advanceStep()
+                }
+                .transition(.opacity)
+            }
         }
         .onChange(of: firstOption.name) { _, newValue in
-            if !newValue.isEmpty && activeField == 0 {
-                withAnimation(.spring(response: 0.3)) {
-                    activeField = 1
-                    focusedField = 1
-                }
-            }
+            validateAndProgress(newValue, isFirstOption: true)
         }
         .onChange(of: secondOption.name) { _, newValue in
-            if !newValue.isEmpty {
-                withAnimation(.spring(response: 0.3)) {
-                    showComparison = true
-                }
-            }
+            validateAndProgress(newValue, isFirstOption: false)
         }
         .onAppear {
             focusedField = 0
         }
     }
     
-    private func optionField(text: Binding<String>, placeholder: String, isActive: Bool) -> some View {
-        TextField("", text: text)
-            .textFieldStyle(.plain)
-            .font(.system(size: 15))
-            .foregroundColor(.white)
-            .focused($focusedField, equals: isActive ? 0 : 1)
-            .placeholder(when: text.wrappedValue.isEmpty, placeholder: placeholder)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(Color.white.opacity(isActive ? 0.05 : 0.02))
-            .cornerRadius(8)
+    private func validateAndProgress(_ value: String, isFirstOption: Bool) {
+        guard !value.isEmpty else { return }
+        
+        if isFirstOption && activeField == 0 {
+            withAnimation(.spring(response: 0.3)) {
+                activeField = 1
+                focusedField = 1
+            }
+        } else if !isFirstOption && value.count >= 3 {
+            withAnimation(.spring(response: 0.3)) {
+                showComparison = true
+                optionsComplete = true
+                flowManager.updateProgressibility(true)
+            }
+        }
+    }
+    
+    private func optionField(text: Binding<String>, placeholder: String, fieldIndex: Int) -> some View {
+        HStack {
+            TextField("", text: text)
+                .font(.system(size: 15))
+                .foregroundColor(.white)
+                .textFieldStyle(.plain)
+                .focused($focusedField, equals: fieldIndex)
+                .placeholder(when: text.wrappedValue.isEmpty, placeholder: placeholder)
+                .onSubmit {
+                    handleSubmit(fieldIndex)
+                }
+            
+            InputValidationIndicator(isValid: text.wrappedValue.count >= 3)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(Color.white.opacity(focusedField == fieldIndex ? 0.05 : 0.02))
+        .cornerRadius(8)
+    }
+    
+    private func handleSubmit(_ fieldIndex: Int) {
+        if fieldIndex == 0 && !firstOption.name.isEmpty {
+            withAnimation(.spring(response: 0.3)) {
+                activeField = 1
+                focusedField = 1
+            }
+        } else if fieldIndex == 1 && !secondOption.name.isEmpty {
+            withAnimation(.spring(response: 0.3)) {
+                showComparison = true
+                optionsComplete = true
+                flowManager.updateProgressibility(true)
+            }
+        }
     }
 }
 
