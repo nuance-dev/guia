@@ -28,6 +28,7 @@ class DecisionFlowManager: ObservableObject {
     @Published var progress: CGFloat = 0.0
     @Published var canProgress = false
     @Published var canGoBack = false
+    @Published var showResetConfirmation = false
     
     private var keyboardHandler: KeyboardHandler?
     
@@ -133,5 +134,18 @@ class DecisionFlowManager: ObservableObject {
     private func updateNavigationState() {
         canGoBack = currentStep.previousStep != nil
         // Other navigation state updates...
+    }
+    
+    func resetFlow() {
+        withAnimation(.spring(response: 0.3)) {
+            currentStep = .initial
+            progress = 0.0
+            canProgress = false
+            canGoBack = false
+        }
+    }
+    
+    func showResetAlert() {
+        showResetConfirmation = true
     }
 } 

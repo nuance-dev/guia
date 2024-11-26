@@ -4,16 +4,13 @@ struct AnalysisView: View {
     let options: [Option]
     let factors: [Factor]
     
-    @State private var showDetails = false
-    @State private var selectedOption: Option?
+    private var bestOption: Option? {
+        options.max(by: { $0.confidenceScore < $1.confidenceScore })
+    }
     
-    private var confidenceScore: Double {
-        guard options.count >= 2 else { return 0 }
-        let scores = options.map { option in
-            factors.reduce(0) { $0 + ($1.weight * $1.score) }
-        }
-        let difference = abs(scores[0] - scores[1])
-        return min(difference * 2, 1.0)
+    private func formatConfidence(_ value: Double) -> String {
+        let roundedValue = Int(max(min(value, 100), 0))
+        return "\(roundedValue)%"
     }
     
     var body: some View {
@@ -23,43 +20,42 @@ struct AnalysisView: View {
                 Text("Analysis Complete")
                     .font(.system(size: 32, weight: .medium))
                 
-                ConfidenceIndicator(value: confidenceScore)
-                    .frame(height: 4)
-                    .frame(maxWidth: 200)
+                if let best = bestOption {
+                    Text("Recommended: \(best.name)")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.accentColor)
+                }
             }
             
             // Options comparison
             ForEach(options, id: \.name) { option in
-                OptionCard(option: option, factors: factors)
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.3)) {
-                            selectedOption = option
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text(option.name)
+                            .font(.system(size: 24, weight: .medium))
+                        Spacer()
+                        Text(formatConfidence(option.confidenceScore))
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.accentColor)
+                    }
+                    
+                    // Factor breakdown
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(option.factors) { factor in
+                            HStack {
+                                Text(factor.name)
+                                    .foregroundColor(.white.opacity(0.8))
+                                Spacer()
+                                Text(formatConfidence(factor.normalizedScore * 100))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
                         }
                     }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct OptionCard: View {
-    let option: Option
-    let factors: [Factor]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(option.name)
-                .font(.system(size: 24, weight: .medium))
-            
-            // Factor impacts
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(factors) { factor in
-                    FactorImpactRow(factor: factor)
                 }
+                .padding(24)
+                .background(Color.white.opacity(0.03))
+                .cornerRadius(16)
             }
         }
-        .padding(24)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
     }
 }
