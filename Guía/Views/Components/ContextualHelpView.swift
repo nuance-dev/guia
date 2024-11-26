@@ -2,29 +2,30 @@ import SwiftUI
 
 struct ContextualHelpView: View {
     let tip: String
+    @State private var isHovered = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "lightbulb.fill")
-                    .foregroundColor(.yellow.opacity(0.8))
-                Text("Pro Tip")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-            }
+        HStack(spacing: 8) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.4))
             
             Text(tip)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.7))
-                .lineSpacing(4)
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.4))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
-        .padding(16)
-        .frame(maxWidth: 300, alignment: .leading)
-        .background(Color.black.opacity(0.7))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(isHovered ? 0.05 : 0.02))
         )
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
     }
 } 

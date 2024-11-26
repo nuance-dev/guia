@@ -14,11 +14,13 @@ class KeyboardHandler: ObservableObject {
     @Published var canAddMore = true
     @Published var isCompareMode = false
     @Published var currentStep: DecisionStep = .initial
+    @Published var activeOptionField = 0
     
     var onEnterPressed: (() -> Void)?
     var onCommandEnterPressed: (() -> Void)?
     var onItemAdd: (() -> Void)?
     var onTabPressed: (() -> Void)?
+    var onOptionSubmit: ((Int) -> Void)?
     
     init() {
         setupKeyboardMonitoring()
@@ -28,12 +30,13 @@ class KeyboardHandler: ObservableObject {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self = self else { return event }
             
-            // Command + Enter always tries to progress
+            // Command + Enter always tries to progress if possible
             if event.modifierFlags.contains(.command) && event.keyCode == 36 {
                 if self.canProgress {
                     self.onCommandEnterPressed?()
+                    return nil
                 }
-                return nil
+                return event
             }
             
             // Tab key for field navigation
@@ -46,14 +49,22 @@ class KeyboardHandler: ObservableObject {
             if event.keyCode == 36 && !event.modifierFlags.contains(.command) {
                 switch currentStep {
                 case .optionEntry:
-                    // In option entry, enter adds new item
-                    if self.canAddMore {
-                        self.onItemAdd?()
+                    // Submit current option if valid
+                    self.onOptionSubmit?(self.activeOptionField)
+                    return nil
+                case .scoring:
+                    // In scoring, if we can progress, enter advances
+                    if self.canProgress {
+                        self.onEnterPressed?()
+                        return nil
                     }
                 default:
-                    break
+                    // For other steps, enter advances if we can progress
+                    if self.canProgress {
+                        self.onEnterPressed?()
+                        return nil
+                    }
                 }
-                return nil
             }
             
             return event
@@ -67,5 +78,9 @@ class KeyboardHandler: ObservableObject {
             self.canAddMore = canAddMore
             self.isCompareMode = isCompareMode
         }
+    }
+    
+    func setActiveOptionField(_ field: Int) {
+        self.activeOptionField = field
     }
 } 

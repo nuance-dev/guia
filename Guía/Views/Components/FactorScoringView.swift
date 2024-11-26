@@ -79,13 +79,21 @@ struct FactorScoringView: View {
     private func binding(for option: Option, factor: Factor) -> Binding<Double> {
         Binding(
             get: {
-                option.factors.first(where: { $0.id == factor.id })?.score ?? 0.5
+                if let existingFactor = option.factors.first(where: { $0.id == factor.id }) {
+                    return existingFactor.score
+                }
+                // Initialize with default score if not found
+                return 0.5
             },
             set: { newValue in
-                if let optionIndex = options.firstIndex(where: { $0.id == option.id }),
-                   let factorIndex = options[optionIndex].factors.firstIndex(where: { $0.id == factor.id }) {
-                    withAnimation(.spring(response: 0.3)) {
+                if let optionIndex = options.firstIndex(where: { $0.id == option.id }) {
+                    if let factorIndex = options[optionIndex].factors.firstIndex(where: { $0.id == factor.id }) {
                         options[optionIndex].factors[factorIndex].score = newValue
+                    } else {
+                        // If factor doesn't exist, create it
+                        var newFactor = factor
+                        newFactor.score = newValue
+                        options[optionIndex].factors.append(newFactor)
                     }
                 }
             }
@@ -127,21 +135,26 @@ struct ScoringSlider: View {
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .frame(width: geometry.size.width * CGFloat(score), height: 4)
+                    .frame(width: max(0, min(geometry.size.width * CGFloat(score), geometry.size.width)), height: 4)
                     .cornerRadius(2)
-                }
-                .overlay(
+                    
+                    // Thumb
                     Circle()
                         .fill(Color.white)
                         .frame(width: 16, height: 16)
-                        .offset(x: (geometry.size.width * CGFloat(score)) - 8)
-                )
+                        .position(x: max(8, min(geometry.size.width * CGFloat(score), geometry.size.width - 8)), 
+                                y: geometry.size.height / 2)
+                }
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
                             let newScore = min(max(value.location.x / geometry.size.width, 0), 1)
-                            score = Double(newScore)
-                            onChange(score)
+                            withAnimation(.interactiveSpring()) {
+                                score = Double(newScore)
+                                onChange(score)
+                            }
                         }
                 )
             }
