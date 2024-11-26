@@ -102,17 +102,17 @@ class DecisionFlowManager: ObservableObject {
     var currentHelpTip: String {
         switch currentStep {
         case .initial:
-            return "Let's help you make the right choice. Start by thinking about your options."
+            return "Pro tip: Frame your decision as a question to explore different perspectives"
         case .optionEntry:
-            return "Enter 2-3 options you're deciding between. Be specific but concise."
+            return "Pro tip: Consider options that challenge your initial assumptions"
         case .factorCollection:
-            return "What factors matter most in this decision? List them in order of importance."
+            return "Pro tip: Include both rational and emotional factors - they're equally important"
         case .weighting:
-            return "Adjust how much each factor influences your decision."
+            return "Pro tip: Your gut feeling about importance is often more accurate than overthinking"
         case .scoring:
-            return "Compare options based on the factors."
+            return "Pro tip: First impressions matter - trust your initial scoring instinct"
         case .analysis:
-            return "Here's a detailed breakdown of your decision based on your inputs."
+            return "Pro tip: The best decision often feels right both logically and emotionally"
         }
     }
     

@@ -45,23 +45,13 @@ class KeyboardHandler: ObservableObject {
             // Plain Enter behavior
             if event.keyCode == 36 && !event.modifierFlags.contains(.command) {
                 switch currentStep {
-                case .initial:
-                    // In initial step, enter progresses
-                    if self.canProgress {
-                        self.onEnterPressed?()
-                    }
                 case .optionEntry:
-                    // In option entry, enter adds if possible, otherwise progresses
+                    // In option entry, enter adds new item
                     if self.canAddMore {
                         self.onItemAdd?()
-                    } else if self.canProgress {
-                        self.onEnterPressed?()
                     }
                 default:
-                    // In other steps (like compare), enter progresses
-                    if self.canProgress {
-                        self.onEnterPressed?()
-                    }
+                    break
                 }
                 return nil
             }

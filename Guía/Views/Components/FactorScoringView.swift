@@ -79,15 +79,14 @@ struct FactorScoringView: View {
     private func binding(for option: Option, factor: Factor) -> Binding<Double> {
         Binding(
             get: {
-                if let index = option.factors.firstIndex(where: { $0.id == factor.id }) {
-                    return option.factors[index].score
-                }
-                return 0
+                option.factors.first(where: { $0.id == factor.id })?.score ?? 0.5
             },
             set: { newValue in
                 if let optionIndex = options.firstIndex(where: { $0.id == option.id }),
                    let factorIndex = options[optionIndex].factors.firstIndex(where: { $0.id == factor.id }) {
-                    options[optionIndex].factors[factorIndex].score = newValue
+                    withAnimation(.spring(response: 0.3)) {
+                        options[optionIndex].factors[factorIndex].score = newValue
+                    }
                 }
             }
         )
@@ -105,45 +104,48 @@ struct ScoringSlider: View {
     let onChange: (Double) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(option)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundColor(.white)
             
-            HStack {
-                Text("Poor")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.6))
-                
-                Slider(value: $score, in: -1...1) { _ in
-                    onChange(score)
-                }
-                .tint(.white.opacity(0.6))
-                
-                Text("Excellent")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            
-            // Score indicator
-            HStack(spacing: 2) {
-                ForEach(0..<20) { index in
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background track
                     Rectangle()
-                        .fill(Color.white.opacity(
-                            Double(index) / 20 <= (score + 1) / 2 ? 0.6 : 0.1
-                        ))
+                        .fill(Color.white.opacity(0.1))
                         .frame(height: 4)
+                        .cornerRadius(2)
+                    
+                    // Gradient track
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.red.opacity(0.8),
+                            Color.yellow.opacity(0.8),
+                            Color.green.opacity(0.8)
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geometry.size.width * CGFloat(score), height: 4)
+                    .cornerRadius(2)
                 }
-            }
-        }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.03))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 16, height: 16)
+                        .offset(x: (geometry.size.width * CGFloat(score)) - 8)
                 )
-        )
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let newScore = min(max(value.location.x / geometry.size.width, 0), 1)
+                            score = Double(newScore)
+                            onChange(score)
+                        }
+                )
+            }
+            .frame(height: 24)
+        }
     }
 } 
