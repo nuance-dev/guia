@@ -119,6 +119,11 @@ struct ContentView: View {
                     }
                 ))
             }
+        case .scoring:
+            FactorScoringView(options: .init(
+                get: { decisionContext.options },
+                set: { decisionContext.options = $0 }
+            ))
         case .analysis:
             if let firstOption = decisionContext.options.first {
                 AnalysisView(

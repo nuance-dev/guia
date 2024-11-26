@@ -15,7 +15,8 @@ struct Factor: Identifiable, Hashable {
     }
 }
 
-struct Option {
+struct Option: Identifiable {
+    let id = UUID()
     var name: String
     var factors: [Factor]
     var timeframe: TimeFrame

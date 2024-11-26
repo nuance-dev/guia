@@ -6,6 +6,7 @@ class DecisionFlowManager: ObservableObject {
         case optionEntry
         case factorCollection
         case weighting
+        case scoring
         case analysis
         
         var nextStep: DecisionStep? {
@@ -87,6 +88,8 @@ class DecisionFlowManager: ObservableObject {
             return "What factors matter most in this decision? List them in order of importance."
         case .weighting:
             return "Adjust how much each factor influences your decision."
+        case .scoring:
+            return "Compare options based on the factors."
         case .analysis:
             return "Here's a detailed breakdown of your decision based on your inputs."
         }
@@ -102,6 +105,7 @@ class DecisionFlowManager: ObservableObject {
         case .optionEntry: return "Continue"
         case .factorCollection: return "Weight Factors"
         case .weighting: return "Analyze"
+        case .scoring: return "Score Options"
         case .analysis: return ""
         }
     }
