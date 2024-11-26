@@ -93,22 +93,33 @@ class DecisionContext: ObservableObject {
     }
     
     func calculateConfidence() -> Double {
+        guard options.count >= 2 else { return 0 }
+        
+        // Calculate total weights
         let totalWeight = options.reduce(0) { sum, option in
             sum + option.factors.reduce(0) { $0 + $1.weight }
         }
         
         guard totalWeight > 0 else { return 0 }
         
+        // Calculate weighted scores for each option
         let weightedScores = options.map { option in
             option.factors.reduce(0) { sum, factor in
                 sum + (factor.weight * factor.score)
             } / totalWeight
         }
         
-        // Normalize to 0-1 range
-        let normalizedScores = weightedScores.map { ($0 + 1) / 2 }
+        // Calculate score difference between options
+        let scoreDifference = abs(weightedScores[0] - weightedScores[1])
         
-        return normalizedScores.first ?? 0
+        // Normalize confidence based on score difference
+        let confidence = min(scoreDifference * 2, 1.0)
+        
+        // Apply risk and timeframe adjustments
+        let riskAdjustment = calculateRiskAdjustment()
+        let timeframeAdjustment = calculateTimeframeAdjustment()
+        
+        return confidence * riskAdjustment * timeframeAdjustment
     }
     
     private func calculateRiskAdjustment() -> Double {

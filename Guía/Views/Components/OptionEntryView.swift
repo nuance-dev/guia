@@ -55,13 +55,6 @@ struct OptionEntryView: View {
             }
             
             Spacer()
-            
-            if optionsComplete {
-                ActionButton(title: "Continue to Factors") {
-                    flowManager.advanceStep()
-                }
-                .transition(.opacity)
-            }
         }
         .onChange(of: firstOption.name) { _, newValue in
             validateAndProgress(newValue, isFirstOption: true)
@@ -100,8 +93,11 @@ struct OptionEntryView: View {
                 .focused($focusedField, equals: fieldIndex)
                 .placeholder(when: text.wrappedValue.isEmpty, placeholder: placeholder)
                 .onSubmit {
-                    handleSubmit(fieldIndex)
+                    if !text.wrappedValue.isEmpty {
+                        handleSubmit(fieldIndex)
+                    }
                 }
+                .keyboardShortcut(.return, modifiers: [.command])
             
             InputValidationIndicator(isValid: text.wrappedValue.count >= 3)
         }

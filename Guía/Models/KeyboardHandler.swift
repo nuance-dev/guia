@@ -3,6 +3,8 @@ import SwiftUI
 class KeyboardHandler: ObservableObject {
     @Published var canProgress = false
     var onEnterPressed: (() -> Void)?
+    var onCommandEnterPressed: (() -> Void)?
+    var onItemAdd: (() -> Void)?
     
     init() {
         setupKeyboardMonitoring()
@@ -10,11 +12,20 @@ class KeyboardHandler: ObservableObject {
     
     private func setupKeyboardMonitoring() {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 36 { // Enter key
+            // Command + Enter to advance step
+            if event.modifierFlags.contains(.command) && event.keyCode == 36 {
+                self?.onCommandEnterPressed?()
+                return nil
+            }
+            
+            // Plain Enter for adding items
+            if event.keyCode == 36 && !event.modifierFlags.contains(.command) {
                 if self?.canProgress == true {
                     self?.onEnterPressed?()
-                    return nil
+                } else {
+                    self?.onItemAdd?()
                 }
+                return nil
             }
             return event
         }
