@@ -39,6 +39,16 @@ class DecisionFlowManager: ObservableObject {
     
     private func setupKeyboardHandler() {
         keyboardHandler = KeyboardHandler()
+        
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Command + Enter to advance step
+            if event.modifierFlags.contains(.command) && event.keyCode == 36 {
+                self?.advanceStep()
+                return nil
+            }
+            return event
+        }
+        
         keyboardHandler?.onEnterPressed = { [weak self] in
             self?.handleEnterPress()
         }

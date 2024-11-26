@@ -34,10 +34,7 @@ struct FactorCollectionView: View {
     }
     
     private var suggestionsGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 100))],
-            spacing: 6
-        ) {
+        FlowLayout(spacing: 4) {
             ForEach(suggestions.filter { suggestion in
                 !factors.contains { $0.name == suggestion }
             }, id: \.self) { suggestion in
@@ -45,14 +42,21 @@ struct FactorCollectionView: View {
                     Text(suggestion)
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.6))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.03))
-                        .cornerRadius(4)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.white.opacity(0.03))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(SuggestionButtonStyle())
             }
         }
+        .padding(.vertical, 4)
     }
     
     private var headerSection: some View {
