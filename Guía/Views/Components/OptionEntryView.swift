@@ -4,18 +4,9 @@ struct OptionEntryView: View {
     @Binding var firstOption: Option
     @Binding var secondOption: Option
     @Binding var thirdOption: Option
-    @State private var showThirdOption = false
     @FocusState private var focusedField: Int?
-    @State private var activeField = 0
+    @State private var visibleFields = 1
     @EnvironmentObject private var flowManager: DecisionFlowManager
-    
-    private var optionsComplete: Bool {
-        !firstOption.name.isEmpty && !secondOption.name.isEmpty
-    }
-    
-    private var subheaderText: String {
-        "What are your options?"
-    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
@@ -25,14 +16,14 @@ struct OptionEntryView: View {
                     .font(.system(size: 32, weight: .medium))
                     .foregroundColor(.white)
                 
-                Text(subheaderText)
+                Text("What are your possible choices?")
                     .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.6))
             }
             
-            // Progressive Option Fields
-            VStack(spacing: 24) {
-                if activeField >= 0 {
+            // Option Fields
+            VStack(spacing: 16) {
+                if visibleFields >= 1 {
                     optionField(
                         option: $firstOption,
                         placeholder: "First option",
@@ -41,7 +32,7 @@ struct OptionEntryView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 
-                if activeField >= 1 && !firstOption.name.isEmpty {
+                if visibleFields >= 2 {
                     optionField(
                         option: $secondOption,
                         placeholder: "Second option",
@@ -50,7 +41,7 @@ struct OptionEntryView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 
-                if activeField >= 2 && !secondOption.name.isEmpty && showThirdOption {
+                if visibleFields >= 3 {
                     optionField(
                         option: $thirdOption,
                         placeholder: "Third option (optional)",
@@ -59,79 +50,51 @@ struct OptionEntryView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-            
-            // Add third option button
-            if !showThirdOption && optionsComplete {
-                Button(action: { 
-                    withAnimation(.spring()) {
-                        showThirdOption = true
-                        activeField = 2
-                        focusedField = 2
-                    }
-                }) {
-                    Label("Add another option", systemImage: "plus.circle.fill")
-                        .font(.system(size: 14, weight: .medium))
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(.white.opacity(0.6))
-                .padding(.top, 8)
-            }
         }
-        .onChange(of: focusedField, initial: false) { oldValue, newValue in
-            if let field = newValue {
-                withAnimation(.spring()) {
-                    activeField = field
-                }
-            }
+        .onChange(of: firstOption.name) { oldValue, newValue in
+            handleOptionChange(fieldIndex: 0, value: newValue)
         }
-        .onChange(of: firstOption.name, initial: false) { oldValue, newValue in
-            if !newValue.isEmpty && activeField == 0 {
-                withAnimation(.spring()) {
-                    activeField = 1
-                    focusedField = 1
-                }
-            }
-            updateProgress()
+        .onChange(of: secondOption.name) { oldValue, newValue in
+            handleOptionChange(fieldIndex: 1, value: newValue)
         }
-        .onChange(of: secondOption.name, initial: false) { oldValue, newValue in
-            if !newValue.isEmpty && activeField == 1 {
-                withAnimation(.spring()) {
-                    activeField = 2
-                }
-            }
-            updateProgress()
-        }
-        .onChange(of: thirdOption.name, initial: false) { oldValue, newValue in
-            updateProgress()
+        .onAppear {
+            focusedField = 0
         }
     }
     
     private func optionField(option: Binding<Option>, placeholder: String, fieldIndex: Int) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TextField(placeholder, text: option.name)
-                .textFieldStyle(.plain)
-                .font(.system(size: 15))
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.ultraThinMaterial)
-                        .opacity(0.5)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.white.opacity(focusedField == fieldIndex ? 0.1 : 0.05), lineWidth: 1)
-                )
-                .focused($focusedField, equals: fieldIndex)
-                .onSubmit {
-                    if !option.wrappedValue.name.isEmpty {
-                        withAnimation(.spring()) {
-                            if fieldIndex < 2 {
-                                activeField = fieldIndex + 1
-                                focusedField = fieldIndex + 1
-                            }
-                        }
-                    }
-                }
+        TextField(placeholder, text: option.name)
+            .textFieldStyle(.plain)
+            .font(.system(size: 15))
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(0.03))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(focusedField == fieldIndex ? 0.1 : 0.05), lineWidth: 1)
+            )
+            .focused($focusedField, equals: fieldIndex)
+            .onSubmit {
+                handleSubmit(fieldIndex: fieldIndex)
+            }
+    }
+    
+    private func handleOptionChange(fieldIndex: Int, value: String) {
+        if !value.isEmpty && fieldIndex == visibleFields - 1 && visibleFields < 3 {
+            withAnimation(.spring(response: 0.3)) {
+                visibleFields += 1
+            }
+        }
+        updateProgress()
+    }
+    
+    private func handleSubmit(fieldIndex: Int) {
+        if fieldIndex < 2 && visibleFields > fieldIndex + 1 {
+            focusedField = fieldIndex + 1
+        } else if fieldIndex == 1 && !secondOption.name.isEmpty {
+            flowManager.advanceStep()
         }
     }
     
