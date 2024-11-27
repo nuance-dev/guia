@@ -39,7 +39,7 @@ struct AnalysisView: View {
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
                     
-                    VStack(spacing: 12) {
+                    VStack(spacing: 8) {
                         ForEach(options) { option in
                             ConfidenceIndicator(
                                 score: option.confidenceScore / 100,
@@ -48,16 +48,15 @@ struct AnalysisView: View {
                         }
                     }
                 }
-                
-                // Factor comparison grid
-                FactorComparisonGrid(options: options)
-                
+
+                VStack(alignment: .leading, spacing: 6) {
                 // Detailed analysis for each option
                 ForEach(options) { option in
                     OptionDetailView(
                         option: option,
                         isRecommended: option.id == bestOption?.id
                     )
+                }
                 }
             }
             .padding(24)
