@@ -44,7 +44,7 @@ struct InitialPromptView: View {
             if !decisionContext.mainDecision.isEmpty {
                 Button {
                     withAnimation {
-                        flowManager.moveToNext()
+                        flowManager.advanceStep()
                     }
                 } label: {
                     HStack {
@@ -54,19 +54,17 @@ struct InitialPromptView: View {
                             .font(.system(size: 14, weight: .medium))
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .padding(.vertical, 12)
                     .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .cornerRadius(8)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
-        .frame(maxWidth: 460)
-        .padding(.top, 40)
-        .onAppear {
-            isTextFieldFocused = true
+        .onChange(of: decisionContext.mainDecision) { _, newValue in
+            flowManager.updateProgressibility(!newValue.isEmpty)
         }
     }
 }
