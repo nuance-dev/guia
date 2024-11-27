@@ -76,15 +76,33 @@ struct FactorCollectionView: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white.opacity(0.5))
                         
-                        LazyVGrid(columns: [
-                            GridItem(.adaptive(minimum: 120, maximum: 200), spacing: 8)
-                        ], spacing: 8) {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 140, maximum: 180), spacing: 8)
+                            ],
+                            spacing: 8
+                        ) {
                             ForEach(suggestions.filter { suggestion in
                                 !factors.contains { $0.name == suggestion }
                             }, id: \.self) { suggestion in
-                                SuggestionPill(text: suggestion) {
+                                Button {
                                     addSuggestion(suggestion)
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Text(suggestion)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.6))
+                                        Spacer()
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.4))
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.white.opacity(0.03))
+                                    .cornerRadius(16)
                                 }
+                                .buttonStyle(SuggestionButtonStyle())
                             }
                         }
                     }
@@ -106,9 +124,17 @@ struct FactorCollectionView: View {
     
     private func addFactor() {
         guard !newFactor.isEmpty && factors.count < maxFactors else { return }
+        let trimmedFactor = newFactor.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedFactor.isEmpty else { return }
+        
         withAnimation(.spring(response: 0.3)) {
-            factors.append(Factor(name: newFactor, weight: 0.5, score: 0))
+            factors.append(Factor(name: trimmedFactor, weight: 0.5, score: 0))
             newFactor = ""
+            
+            // Update progress if we have enough factors
+            if factors.count >= 2 {
+                flowManager.updateProgressibility(true)
+            }
         }
     }
     
@@ -116,6 +142,13 @@ struct FactorCollectionView: View {
         guard factors.count < maxFactors else { return }
         withAnimation(.spring(response: 0.3)) {
             factors.append(Factor(name: suggestion, weight: 0.5, score: 0))
+        }
+    }
+    
+    private func handleFactorSubmit() {
+        addFactor()
+        if factors.count >= 5 {
+            flowManager.advanceStep()
         }
     }
 }

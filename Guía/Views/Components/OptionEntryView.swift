@@ -78,37 +78,7 @@ struct OptionEntryView: View {
             .focused($focusedField, equals: fieldIndex)
             .submitLabel(fieldIndex == 2 ? .done : .next)
             .onSubmit {
-                switch fieldIndex {
-                case 0:
-                    if !firstOption.name.isEmpty {
-                        focusedField = 1
-                        if visibleFields < 2 {
-                            withAnimation(.spring(response: 0.3)) {
-                                visibleFields = 2
-                            }
-                        }
-                    }
-                case 1:
-                    if !secondOption.name.isEmpty {
-                        if !firstOption.name.isEmpty {
-                            flowManager.advanceStep()
-                        } else {
-                            focusedField = 2
-                            if visibleFields < 3 {
-                                withAnimation(.spring(response: 0.3)) {
-                                    visibleFields = 3
-                                }
-                            }
-                        }
-                    }
-                case 2:
-                    if !firstOption.name.isEmpty && !secondOption.name.isEmpty {
-                        flowManager.advanceStep()
-                    }
-                default:
-                    break
-                }
-                updateProgress()
+                handleOptionFieldSubmit(fieldIndex)
             }
     }
     
@@ -123,6 +93,38 @@ struct OptionEntryView: View {
     
     private func updateProgress() {
         flowManager.updateProgressibility(!firstOption.name.isEmpty && !secondOption.name.isEmpty)
+    }
+    
+    private func handleOptionFieldSubmit(_ fieldIndex: Int) {
+        switch fieldIndex {
+        case 0:
+            if !firstOption.name.isEmpty {
+                focusedField = 1
+                if visibleFields < 2 {
+                    withAnimation(.spring(response: 0.3)) {
+                        visibleFields = 2
+                    }
+                }
+            }
+        case 1:
+            if !secondOption.name.isEmpty {
+                focusedField = 2
+                if visibleFields < 3 {
+                    withAnimation(.spring(response: 0.3)) {
+                        visibleFields = 3
+                    }
+                }
+            } else if !firstOption.name.isEmpty {
+                flowManager.advanceStep()
+            }
+        case 2:
+            if !firstOption.name.isEmpty && !secondOption.name.isEmpty {
+                flowManager.advanceStep()
+            }
+        default:
+            break
+        }
+        updateProgress()
     }
 }
 
