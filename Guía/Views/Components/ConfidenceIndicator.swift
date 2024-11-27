@@ -2,35 +2,34 @@ import SwiftUI
 
 struct ConfidenceIndicator: View {
     let score: Double
-    let label: String
+    @State private var animateProgress = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(label)
-                    .font(.system(size: 13, weight: .medium))
-                Text("\(Int(score * 100))%")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.accentColor)
-            }
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.1), lineWidth: 4)
             
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 4)
-                        .cornerRadius(2)
-                    
-                    Rectangle()
-                        .fill(Color.accentColor)
-                        .frame(width: geometry.size.width * score, height: 4)
-                        .cornerRadius(2)
-                }
+            Circle()
+                .trim(from: 0, to: animateProgress ? score / 100 : 0)
+                .stroke(Color.accentColor, style: StrokeStyle(
+                    lineWidth: 4,
+                    lineCap: .round
+                ))
+                .rotationEffect(.degrees(-90))
+            
+            VStack(spacing: 4) {
+                Text("\(Int(score))%")
+                    .font(.system(size: 24, weight: .medium))
+                Text("Confidence")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
             }
-            .frame(height: 4)
         }
-        .padding(12)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(8)
+        .frame(width: 100, height: 100)
+        .onAppear {
+            withAnimation(.spring(response: 1.5)) {
+                animateProgress = true
+            }
+        }
     }
-} 
+}
