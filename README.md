@@ -1,6 +1,6 @@
 # Guía - A Free MacOS (14+) Native Decision Making Assistant
 
-![App Screenshot - Placeholder for actual screenshot]
+![image](https://github.com/user-attachments/assets/d470839a-a250-4ec4-b976-1b3fe708666e)
 
 A sleek, native macOS app that helps you make better decisions through structured analysis and visual feedback. Built with a minimal interface and modern design.
 
@@ -49,10 +49,8 @@ Key design elements include:
 
 ## 🥑 Fun facts
 
-- Built with Claude 3.5 Sonnet
-- Current version: 2.7.0 (Build 58)
-- Uses native SwiftUI for optimal performance
-- Includes smart factor suggestions to help guide decisions
+- Built with with Cursor and Claude 3.5 Sonnet
+- Originally v1 was an 8k line app that was completely scrapped
 
 ## 🤝 Contributing
 
