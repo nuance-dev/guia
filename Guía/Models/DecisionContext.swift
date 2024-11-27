@@ -98,35 +98,37 @@ class DecisionContext: ObservableObject {
         }
     }
     
-    func calculateConfidence() -> Double {
-        guard options.count >= 2 else { return 0 }
-        
-        // Calculate total weights
-        let totalWeight = options.reduce(0) { sum, option in
-            sum + option.factors.reduce(0) { $0 + $1.weight }
+func calculateConfidence() -> Double {
+    guard options.count >= 2 else { return 0 }
+    
+    // Calculate weighted scores
+    let weightedScores = options.map { option in
+        option.factors.reduce(0.0) { sum, factor in
+            sum + (factor.weight * factor.normalizedScore)
         }
-        
-        guard totalWeight > 0 else { return 0 }
-        
-        // Calculate weighted scores for each option
-        let weightedScores = options.map { option in
-            option.factors.reduce(0) { sum, factor in
-                sum + (factor.weight * factor.score)
-            } / totalWeight
-        }
-        
-        // Calculate score difference between options
-        let scoreDifference = abs(weightedScores[0] - weightedScores[1])
-        
-        // Normalize confidence based on score difference
-        let confidence = min(scoreDifference * 2, 1.0)
-        
-        // Apply risk and timeframe adjustments
-        let riskAdjustment = calculateRiskAdjustment()
-        let timeframeAdjustment = calculateTimeframeAdjustment()
-        
-        return confidence * riskAdjustment * timeframeAdjustment
     }
+    
+    // Calculate maximum possible score
+    let maxPossibleScore = options.first?.factors.reduce(0.0) { sum, factor in
+        sum + factor.weight
+    } ?? 1.0
+    
+    // Normalize scores
+    let normalizedScores = weightedScores.map { $0 / maxPossibleScore }
+    
+    // Calculate score difference between options
+    let scoreDifference = abs(normalizedScores[0] - normalizedScores[1])
+    
+    // Base confidence on score difference and factor coverage
+    let factorCoverage = min(Double(options.first?.factors.count ?? 0) / 5.0, 1.0)
+    let baseConfidence = (scoreDifference * 0.7 + factorCoverage * 0.3) * 100
+    
+    // Apply risk and timeframe adjustments
+    let riskAdjustment = calculateRiskAdjustment()
+    let timeframeAdjustment = calculateTimeframeAdjustment()
+    
+    return min(baseConfidence * riskAdjustment * timeframeAdjustment, 100)
+}
     
     private func calculateRiskAdjustment() -> Double {
         let riskLevel = options.reduce(.medium) { $1.riskLevel }

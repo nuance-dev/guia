@@ -209,16 +209,17 @@ class DecisionFlowManager: ObservableObject {
     }
     
     func resetFlow() {
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(.spring(response: 0.5)) {
             currentStep = .initial
+            isTransitioning = false
             progress = 0.0
             canProgress = false
             canGoBack = false
-            keyboardHandler?.updateState(step: .optionEntry, canProgress: false, canAddMore: true)
+            showHelp = false
         }
     }
     
-    func showResetAlert() {
+    func confirmReset() {
         showResetConfirmation = true
     }
 } 

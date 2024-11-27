@@ -53,6 +53,16 @@ struct ContentView: View {
         .environmentObject(flowManager)
         .environmentObject(decisionContext)
         .preferredColorScheme(.dark)
+        .alert("Reset Decision", isPresented: $flowManager.showResetConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive) {
+                decisionContext.mainDecision = ""
+                decisionContext.options = []
+                flowManager.resetFlow()
+            }
+        } message: {
+            Text("This will clear all your current progress. Are you sure?")
+        }
     }
     
     @ViewBuilder
