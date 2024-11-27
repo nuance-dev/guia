@@ -14,7 +14,7 @@ Note: Requires macOS version 14+ (Sonoma)
 - **Confidence Scoring**: Get clarity on the strength of each option
 - **Dark Mode Optimized**: Because important decisions shouldn't strain your eyes
 
-[GIF/Video Demo Placeholder]
+https://github.com/user-attachments/assets/b8172304-9553-4cf5-8e11-7cbe4bde2d5a
 
 ## 💻 Get it
 
