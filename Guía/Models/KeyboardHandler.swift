@@ -40,14 +40,14 @@ class KeyboardHandler: ObservableObject {
             if event.keyCode == 36 {
                 switch currentStep {
                 case .optionEntry:
-                    // In option entry, plain enter adds new option, cmd+enter continues
+                    // Allow both Enter and Cmd+Enter to advance if we can progress
                     if event.modifierFlags.contains(.command) {
                         if self.canProgress {
                             self.onCommandEnterPressed?()
                             return nil
                         }
-                    } else {
-                        self.onItemAdd?()
+                    } else if self.canProgress {
+                        self.onEnterPressed?()
                         return nil
                     }
                 case .scoring:

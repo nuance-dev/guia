@@ -76,8 +76,39 @@ struct OptionEntryView: View {
                     .stroke(Color.white.opacity(focusedField == fieldIndex ? 0.1 : 0.05), lineWidth: 1)
             )
             .focused($focusedField, equals: fieldIndex)
+            .submitLabel(fieldIndex == 2 ? .done : .next)
             .onSubmit {
-                handleSubmit(fieldIndex: fieldIndex)
+                switch fieldIndex {
+                case 0:
+                    if !firstOption.name.isEmpty {
+                        focusedField = 1
+                        if visibleFields < 2 {
+                            withAnimation(.spring(response: 0.3)) {
+                                visibleFields = 2
+                            }
+                        }
+                    }
+                case 1:
+                    if !secondOption.name.isEmpty {
+                        if !firstOption.name.isEmpty {
+                            flowManager.advanceStep()
+                        } else {
+                            focusedField = 2
+                            if visibleFields < 3 {
+                                withAnimation(.spring(response: 0.3)) {
+                                    visibleFields = 3
+                                }
+                            }
+                        }
+                    }
+                case 2:
+                    if !firstOption.name.isEmpty && !secondOption.name.isEmpty {
+                        flowManager.advanceStep()
+                    }
+                default:
+                    break
+                }
+                updateProgress()
             }
     }
     
@@ -88,36 +119,6 @@ struct OptionEntryView: View {
             }
         }
         updateProgress()
-    }
-    
-    private func handleSubmit(fieldIndex: Int) {
-        let hasValidContent: Bool
-        switch fieldIndex {
-        case 0:
-            hasValidContent = !firstOption.name.isEmpty
-        case 1:
-            hasValidContent = !secondOption.name.isEmpty
-        case 2:
-            hasValidContent = !thirdOption.name.isEmpty
-        default:
-            hasValidContent = false
-        }
-        
-        if hasValidContent {
-            if fieldIndex < 2 {
-                // Show next field if not already visible
-                if visibleFields <= fieldIndex + 1 {
-                    withAnimation(.spring(response: 0.3)) {
-                        visibleFields += 1
-                    }
-                }
-                // Move focus to next field
-                focusedField = fieldIndex + 1
-            }
-            
-            // Update flow manager progress
-            flowManager.updateProgressibility(visibleFields >= 2 && !firstOption.name.isEmpty && !secondOption.name.isEmpty)
-        }
     }
     
     private func updateProgress() {
