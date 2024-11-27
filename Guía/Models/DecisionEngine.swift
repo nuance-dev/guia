@@ -28,48 +28,49 @@ struct Option: Identifiable {
     var riskLevel: RiskLevel
     var scores: [UUID: Double] = [:]
     
+    var confidenceScore: Double {
+        // Ensure we have scores for all factors
+        let scoredFactors = factors.filter { scores[$0.id] != nil }
+        guard !factors.isEmpty && scoredFactors.count == factors.count else { return 0 }
+        
+        // Calculate weighted score
+        let weightedScore = factors.reduce(0.0) { sum, factor in
+            guard let score = scores[factor.id] else { return sum }
+            return sum + (factor.weight * ((score + 1) / 2))
+        }
+        
+        // Calculate normalized score (0-1)
+        let totalWeight = factors.reduce(0.0) { $0 + $1.weight }
+        let normalizedScore = totalWeight > 0 ? weightedScore / totalWeight : 0
+        
+        // Apply adjustments
+        let factorCoverage = Double(scoredFactors.count) / Double(factors.count)
+        let riskAdjustment = riskLevel.confidenceMultiplier
+        let weightDistribution = calculateWeightDistribution()
+        
+        // Final confidence calculation
+        return min(normalizedScore * factorCoverage * riskAdjustment * weightDistribution * 100, 100)
+    }
+    
+    private func calculateWeightDistribution() -> Double {
+        let weights = factors.map { $0.weight }
+        let variance = weights.reduce(0.0) { sum, weight in
+            let mean = weights.reduce(0.0, +) / Double(weights.count)
+            return sum + pow(weight - mean, 2)
+        } / Double(weights.count)
+        
+        // Return a value between 0.8 and 1.0 based on weight distribution
+        return 0.8 + (0.2 * (1.0 - min(variance * 4, 1.0)))
+    }
+    
     var weightedScore: Double {
         let totalWeight = factors.reduce(0) { $0 + $1.weight }
         guard totalWeight > 0 else { return 0 }
         
         return factors.reduce(0) { sum, factor in
-            sum + (factor.weightedImpact / totalWeight)
+            guard let score = scores[factor.id] else { return sum }
+            return sum + ((factor.weight / totalWeight) * ((score + 1) / 2))
         }
-    }
-    
-    var confidenceScore: Double {
-        guard !factors.isEmpty else { return 0 }
-        
-        // Calculate weighted variance of scores
-        let avgScore = weightedScore
-        let variance = factors.reduce(0) { sum, factor in
-            sum + (factor.weight * pow(factor.normalizedScore - avgScore, 2))
-        }
-        
-        // Factor count influence (more factors = higher base confidence)
-        let factorCountBonus = min(Double(factors.count) / 5.0, 1.0) * 0.2
-        
-        // Weight distribution influence
-        let weightSpread = calculateWeightSpread()
-        
-        // Risk adjustment
-        let riskMultiplier = riskLevel.confidenceMultiplier
-        
-        // Base confidence calculation
-        let baseConfidence = (1 - sqrt(variance)) * 0.8 + factorCountBonus
-        
-        // Apply modifiers
-        return min(baseConfidence * weightSpread * riskMultiplier * 100, 100)
-    }
-    
-    private func calculateWeightSpread() -> Double {
-        let weights = factors.map { $0.weight }
-        let maxWeight = weights.max() ?? 0
-        let minWeight = weights.min() ?? 0
-        
-        // Penalize if weights are too similar or too different
-        let spread = maxWeight - minWeight
-        return 0.8 + (spread * 0.2)
     }
     
     var keyStrengths: [Factor] {

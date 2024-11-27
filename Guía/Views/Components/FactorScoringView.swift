@@ -5,12 +5,49 @@ struct FactorScoringView: View {
     @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var currentFactorIndex = 0
     @State private var showComparison = false
-    @State private var showInsights = false
     
     private var currentFactor: Factor? {
         guard let firstOption = options.first,
               currentFactorIndex < firstOption.factors.count else { return nil }
         return firstOption.factors[currentFactorIndex]
+    }
+    
+    private func syncFactorsAcrossOptions() {
+        guard let firstOption = options.first else { return }
+        // Ensure all options have the same factors
+        for index in options.indices where index > 0 {
+            options[index].factors = firstOption.factors
+        }
+    }
+    
+    private func bindingForScore(optionIndex: Int) -> Binding<Double> {
+        Binding(
+            get: {
+                guard let factorId = currentFactor?.id else { return 0 }
+                return options[optionIndex].scores[factorId] ?? 0
+            },
+            set: { newValue in
+                guard let factorId = currentFactor?.id else { return }
+                var updatedOptions = options
+                updatedOptions[optionIndex].scores[factorId] = newValue
+                options = updatedOptions
+                
+                // Only advance if all options have scored this factor
+                let allScored = options.allSatisfy { option in
+                    option.scores[factorId] != nil
+                }
+                
+                if allScored {
+                    withAnimation(.spring(response: 0.3)) {
+                        if currentFactorIndex < (options.first?.factors.count ?? 0) - 1 {
+                            currentFactorIndex += 1
+                        } else {
+                            flowManager.updateProgressibility(true)
+                        }
+                    }
+                }
+            }
+        )
     }
     
     var body: some View {
@@ -64,39 +101,8 @@ struct FactorScoringView: View {
             }
         }
         .padding(24)
-    }
-    
-    private func bindingForScore(optionIndex: Int) -> Binding<Double> {
-        Binding(
-            get: {
-                guard let factorId = currentFactor?.id else { return 0 }
-                return options[optionIndex].scores[factorId] ?? 0
-            },
-            set: { newValue in
-                guard let factorId = currentFactor?.id else { return }
-                var updatedOption = options[optionIndex]
-                updatedOption.scores[factorId] = newValue
-                options[optionIndex] = updatedOption
-                
-                checkFactorProgress()
-            }
-        )
-    }
-    
-    private func checkFactorProgress() {
-        let allScored = options.allSatisfy { option in
-            guard let factorId = currentFactor?.id else { return false }
-            return option.scores[factorId] != nil
-        }
-        
-        if allScored {
-            withAnimation(.spring(response: 0.3)) {
-                if currentFactorIndex < (options.first?.factors.count ?? 0) - 1 {
-                    currentFactorIndex += 1
-                } else {
-                    flowManager.updateProgressibility(true)
-                }
-            }
+        .onAppear {
+            syncFactorsAcrossOptions()
         }
     }
 }
