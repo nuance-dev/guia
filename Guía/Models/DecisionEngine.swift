@@ -21,6 +21,7 @@ struct Option: Identifiable {
     var factors: [Factor]
     var timeframe: TimeFrame
     var riskLevel: RiskLevel
+    var scores: [UUID: Double] = [:] // Dictionary to store factor scores
     
     var weightedScore: Double {
         let totalWeight = factors.reduce(0) { $0 + $1.weight }

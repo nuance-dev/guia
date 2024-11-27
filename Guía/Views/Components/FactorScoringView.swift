@@ -5,6 +5,7 @@ struct FactorScoringView: View {
     @EnvironmentObject private var flowManager: DecisionFlowManager
     @State private var currentFactorIndex = 0
     @State private var showingComparison = false
+    @State private var suggestions: [String] = []
     
     private var currentFactor: Factor? {
         guard let firstOption = options.first,
@@ -27,7 +28,7 @@ struct FactorScoringView: View {
                 }
             }
             
-            // Progress indicator with labels
+            // Progress indicator
             if let firstOption = options.first, !firstOption.factors.isEmpty {
                 VStack(spacing: 8) {
                     // Factor progress dots
@@ -52,14 +53,51 @@ struct FactorScoringView: View {
                     ForEach($options) { $option in
                         ScoringSlider(
                             option: option.name,
-                            score: binding(for: option, factor: factor),
+                            score: binding(for: $option, factor: factor),
                             onChange: { _ in checkProgress() }
                         )
                     }
                 }
                 .transition(.move(edge: .leading).combined(with: .opacity))
                 
-                // Navigation buttons
+                // Suggestions
+                if !suggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Suggestions")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(suggestions, id: \.self) { suggestion in
+                                    Button(action: {
+                                        applySuggestion(suggestion)
+                                    }) {
+                                        Text(suggestion)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.8))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 6)
+                                                    .fill(Color.white.opacity(0.05))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                }
+                            }
+                            .padding(.horizontal, 1)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.02))
+                    )
+                }
+                
+                // Navigation
                 HStack {
                     if currentFactorIndex > 0 {
                         Button(action: previousFactor) {
@@ -84,60 +122,82 @@ struct FactorScoringView: View {
                             .foregroundColor(.white)
                         }
                         .buttonStyle(.plain)
-                        .keyboardShortcut(.return, modifiers: [])
                     }
                 }
                 .padding(.top, 16)
             }
         }
+        .onChange(of: currentFactorIndex) { oldValue, newValue in
+            updateSuggestions()
+        }
         .onAppear {
-            currentFactorIndex = 0
-            checkProgress()
+            updateSuggestions()
         }
     }
     
-    private func nextFactor() {
-        withAnimation(.spring(response: 0.3)) {
-            currentFactorIndex += 1
-            checkProgress()
-        }
-    }
-    
-    private func previousFactor() {
-        withAnimation(.spring(response: 0.3)) {
-            currentFactorIndex -= 1
-            checkProgress()
-        }
-    }
-    
-    private func binding(for option: Option, factor: Factor) -> Binding<Double> {
+    private func binding(for option: Binding<Option>, factor: Factor) -> Binding<Double> {
         Binding(
-            get: {
-                if let existingFactor = option.factors.first(where: { $0.id == factor.id }) {
-                    return existingFactor.score
-                }
-                // Initialize with default score if not found
-                return 0.5
-            },
+            get: { option.wrappedValue.scores[factor.id] ?? 0.5 },
             set: { newValue in
-                if let optionIndex = options.firstIndex(where: { $0.id == option.id }) {
-                    if let factorIndex = options[optionIndex].factors.firstIndex(where: { $0.id == factor.id }) {
-                        options[optionIndex].factors[factorIndex].score = newValue
-                    } else {
-                        // If factor doesn't exist, create it
-                        var newFactor = factor
-                        newFactor.score = newValue
-                        options[optionIndex].factors.append(newFactor)
-                    }
-                }
+                var updatedOption = option.wrappedValue
+                updatedOption.scores[factor.id] = newValue
+                option.wrappedValue = updatedOption
             }
         )
     }
     
     private func checkProgress() {
-        let isComplete = currentFactorIndex >= (options.first?.factors.count ?? 0)
-        flowManager.updateProgressibility(isComplete)
+        let allFactorsScored = options.allSatisfy { option in
+            guard let factor = currentFactor else { return false }
+            return option.scores[factor.id] != nil
+        }
+        
+        flowManager.updateProgressibility(allFactorsScored)
     }
+    
+    private func nextFactor() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentFactorIndex += 1
+        }
+    }
+    
+    private func previousFactor() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentFactorIndex -= 1
+        }
+    }
+    
+    private func updateSuggestions() {
+        guard let factor = currentFactor else { return }
+        suggestions = generateSuggestions(for: factor)
+    }
+    
+    private func generateSuggestions(for factor: Factor) -> [String] {
+        ["Excellent fit", "Good match", "Neutral", "Poor fit", "Not applicable"]
+    }
+    
+    private func applySuggestion(_ suggestion: String) {
+        guard let factor = currentFactor else { return }
+        let score = scoreMappings[suggestion] ?? 0.5
+        
+        withAnimation(.spring()) {
+            for i in 0..<options.count {
+                var option = options[i]
+                option.scores[factor.id] = score
+                options[i] = option
+            }
+        }
+        
+        checkProgress()
+    }
+    
+    private let scoreMappings: [String: Double] = [
+        "Excellent fit": 1.0,
+        "Good match": 0.75,
+        "Neutral": 0.5,
+        "Poor fit": 0.25,
+        "Not applicable": 0.0
+    ]
 }
 
 struct ScoringSlider: View {

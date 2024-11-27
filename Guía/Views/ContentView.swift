@@ -34,9 +34,9 @@ struct ContentView: View {
             // Navigation hints with enhanced styling
             NavigationHints(canGoBack: flowManager.canGoBack, canProgress: flowManager.canProgress)
         }
-        .onChange(of: flowManager.currentStep) { newStep in
+        .onChange(of: flowManager.currentStep, initial: false) { oldValue, newValue in
             withAnimation(.easeInOut(duration: 0.3)) {
-                showContextBar = newStep != .initial
+                showContextBar = newValue != .initial
             }
         }
         .environmentObject(flowManager)
@@ -53,6 +53,7 @@ struct ContentView: View {
             // Initialize with empty options if needed
             let firstOption = decisionContext.options.first ?? Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
             let secondOption = decisionContext.options.count > 1 ? decisionContext.options[1] : Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
+            let thirdOption = decisionContext.options.count > 2 ? decisionContext.options[2] : Option(name: "", factors: [], timeframe: .immediate, riskLevel: .medium)
             
             OptionEntryView(
                 firstOption: Binding(
@@ -72,6 +73,16 @@ struct ContentView: View {
                             decisionContext.options.append(newValue)
                         } else {
                             decisionContext.options[1] = newValue
+                        }
+                    }
+                ),
+                thirdOption: Binding(
+                    get: { thirdOption },
+                    set: { newValue in
+                        if decisionContext.options.count < 3 {
+                            decisionContext.options.append(newValue)
+                        } else {
+                            decisionContext.options[2] = newValue
                         }
                     }
                 )
@@ -121,16 +132,17 @@ struct BackgroundView: View {
     var body: some View {
         ZStack {
             Color.black
+                .opacity(0.92)
             
-            // Subtle gradient elements
+            // Subtle gradient elements with glass effect
             GeometryReader { proxy in
                 Canvas { context, size in
-                    context.addFilter(.blur(radius: 70))
+                    context.addFilter(.blur(radius: 60))
                     context.drawLayer { ctx in
                         let colors: [Color] = [
-                            .accentColor.opacity(0.2),
-                            .purple.opacity(0.1),
-                            .blue.opacity(0.1)
+                            .accentColor.opacity(0.15),
+                            .purple.opacity(0.08),
+                            .blue.opacity(0.08)
                         ]
                         
                         for (index, color) in colors.enumerated() {
@@ -145,6 +157,11 @@ struct BackgroundView: View {
                     }
                 }
             }
+            
+            // Glass effect overlay
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .opacity(0.3)
         }
         .ignoresSafeArea()
     }

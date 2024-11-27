@@ -3,27 +3,28 @@ import SwiftUI
 struct FactorCollectionView: View {
     @Binding var factors: [Factor]
     @EnvironmentObject private var flowManager: DecisionFlowManager
-    @State private var newFactorName = ""
-    @FocusState private var isFocused: Bool
-    private let maxFactors = 5
+    @EnvironmentObject private var decisionContext: DecisionContext
+    @State private var newFactor = ""
+    @FocusState private var isInputFocused: Bool
     
-    let suggestions = [
-        "Cost",
-        "Time commitment",
-        "Long-term impact",
+    private let maxFactors = 5
+    private let suggestions = [
+        "Cost/Budget",
+        "Time investment",
         "Personal growth",
+        "Impact on others",
+        "Long-term benefits",
         "Risk level",
         "Emotional satisfaction",
-        "Career impact",
+        "Career advancement",
         "Work-life balance",
-        "Learning opportunity",
-        "Financial security"
+        "Learning opportunity"
     ]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
             // Header
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("What factors matter most?")
                     .font(.system(size: 32, weight: .medium))
                     .foregroundColor(.white)
@@ -33,18 +34,91 @@ struct FactorCollectionView: View {
                     .foregroundColor(.white.opacity(0.6))
             }
             
+            // Options display
+            VStack(spacing: 16) {
+                ForEach(decisionContext.options) { option in
+                    OptionDisplay(option: option, isSelected: false, showScore: false)
+                }
+            }
+            
+            // Factors section
             VStack(alignment: .leading, spacing: 24) {
-                // Factor input
                 if factors.count < maxFactors {
-                    factorInput
+                    // Factor input
+                    HStack {
+                        TextField("Add a factor (e.g. Time investment)", text: $newFactor)
+                            .textFieldStyle(.plain)
+                            .focused($isInputFocused)
+                            .font(.system(size: 15))
+                            .foregroundColor(.white)
+                            .onSubmit {
+                                addFactor()
+                            }
+                        
+                        if !newFactor.isEmpty {
+                            Button(action: addFactor) {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.opacity)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(Color.white.opacity(isInputFocused ? 0.05 : 0.02))
+                    .cornerRadius(8)
                 }
                 
                 // Existing factors
-                factorsSection
+                if !factors.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(factors) { factor in
+                            HStack {
+                                Text(factor.name)
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Button(action: { removeFactor(factor) }) {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.white.opacity(0.4))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .background(Color.white.opacity(0.03))
+                            .cornerRadius(8)
+                        }
+                    }
+                }
                 
                 // Suggestions
                 if factors.count < maxFactors {
-                    suggestionsSection
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Suggested Factors")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                        
+                        SuggestionFlowLayout(spacing: 8) {
+                            ForEach(suggestions.filter { suggestion in
+                                !factors.contains { $0.name == suggestion }
+                            }, id: \.self) { suggestion in
+                                Button(action: { addSuggestion(suggestion) }) {
+                                    Text(suggestion)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.white.opacity(0.6))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.03))
+                                        .cornerRadius(16)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -53,100 +127,11 @@ struct FactorCollectionView: View {
         }
     }
     
-    private var suggestionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Suggested Factors")
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.6))
-            
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 8) {
-                ForEach(suggestions.filter { suggestion in
-                    !factors.contains { $0.name == suggestion }
-                }, id: \.self) { suggestion in
-                    Button(action: { addSuggestion(suggestion) }) {
-                        HStack {
-                            Text(suggestion)
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.8))
-                            Spacer()
-                            Image(systemName: "plus")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.4))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.03))
-                        .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .opacity(suggestions.isEmpty ? 0 : 1)
-    }
-    
-    private var factorsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if !factors.isEmpty {
-                Text("Your Decision Factors")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.6))
-                
-                ForEach(factors) { factor in
-                    HStack {
-                        Text(factor.name)
-                            .font(.system(size: 15))
-                            .foregroundColor(.white)
-                        Spacer()
-                        Button(action: { removeFactor(factor) }) {
-                            Image(systemName: "xmark")
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(8)
-                }
-            }
-        }
-    }
-    
-    private var factorInput: some View {
-        HStack {
-            TextField("Add a custom factor", text: $newFactorName)
-                .textFieldStyle(.plain)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.white.opacity(0.03))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                )
-                .focused($isFocused)
-                .onSubmit { addFactor() }
-            
-            Button(action: addFactor) {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .buttonStyle(.plain)
-            .keyboardShortcut(.return, modifiers: [])
-            .disabled(newFactorName.isEmpty)
-        }
-    }
-    
     private func addFactor() {
-        guard !newFactorName.isEmpty && factors.count < maxFactors else { return }
+        guard !newFactor.isEmpty && factors.count < maxFactors else { return }
         withAnimation(.spring(response: 0.3)) {
-            factors.append(Factor(name: newFactorName, weight: 0.5, score: 0))
-            newFactorName = ""
+            factors.append(Factor(name: newFactor, weight: 0.5, score: 0))
+            newFactor = ""
         }
     }
     
@@ -164,33 +149,46 @@ struct FactorCollectionView: View {
     }
 }
 
-// Helper view for factor rows
-private struct FactorRow: View {
-    let factor: Factor
+// Helper view for flowing layout of suggestions
+struct SuggestionFlowLayout: Layout {
+    let spacing: CGFloat
     
-    var body: some View {
-        HStack {
-            Text(factor.name)
-                .foregroundColor(.white)
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(8)
-        .transition(.move(edge: .top).combined(with: .opacity))
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = FlowResult(in: proposal.width ?? 0, subviews: subviews, spacing: spacing)
+        return result.size
     }
-}
-
-// Add this extension at the bottom of the file
-extension View {
-    func placeholder<Content: View>(
-        when shouldShow: Bool,
-        alignment: Alignment = .leading,
-        @ViewBuilder placeholder: () -> Content
-    ) -> some View {
-        ZStack(alignment: alignment) {
-            placeholder().opacity(shouldShow ? 1 : 0)
-            self
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = FlowResult(in: bounds.width, subviews: subviews, spacing: spacing)
+        for (index, frame) in result.frames {
+            subviews[index].place(at: frame.origin, proposal: ProposedViewSize(frame.size))
+        }
+    }
+    
+    private struct FlowResult {
+        var size: CGSize = .zero
+        var frames: [(Int, CGRect)] = []
+        
+        init(in maxWidth: CGFloat, subviews: Subviews, spacing: CGFloat) {
+            var currentPosition = CGPoint.zero
+            var lineHeight: CGFloat = 0
+            
+            for (index, subview) in subviews.enumerated() {
+                let viewSize = subview.sizeThatFits(.unspecified)
+                
+                if currentPosition.x + viewSize.width > maxWidth && currentPosition.x > 0 {
+                    currentPosition.x = 0
+                    currentPosition.y += lineHeight + spacing
+                    lineHeight = 0
+                }
+                
+                frames.append((index, CGRect(origin: currentPosition, size: viewSize)))
+                lineHeight = max(lineHeight, viewSize.height)
+                currentPosition.x += viewSize.width + spacing
+                size.width = max(size.width, currentPosition.x)
+            }
+            
+            size.height = currentPosition.y + lineHeight
         }
     }
 }

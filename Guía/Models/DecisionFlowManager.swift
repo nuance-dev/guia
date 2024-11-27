@@ -102,17 +102,17 @@ class DecisionFlowManager: ObservableObject {
     var currentHelpTip: String {
         switch currentStep {
         case .initial:
-            return "Pro tip: Frame your decision as a question to explore different perspectives"
+            return "Pro tip: Frame your decision as a specific question - it helps clarify your true objective"
         case .optionEntry:
-            return "Pro tip: Consider options that challenge your initial assumptions"
+            return "Pro tip: Consider unconventional alternatives that challenge your initial assumptions"
         case .factorCollection:
-            return "Pro tip: Include both rational and emotional factors - they're equally important"
+            return "Pro tip: Include both quantifiable factors (time, money) and qualitative ones (happiness, growth)"
         case .weighting:
-            return "Pro tip: Your gut feeling about importance is often more accurate than overthinking"
+            return "Pro tip: Assign higher weights to factors that align with your long-term values and goals"
         case .scoring:
-            return "Pro tip: First impressions matter - trust your initial scoring instinct"
+            return "Pro tip: Score each option objectively - imagine giving advice to a friend"
         case .analysis:
-            return "Pro tip: The best decision often feels right both logically and emotionally"
+            return "Pro tip: The best choice often balances both rational analysis and emotional alignment"
         }
     }
     
