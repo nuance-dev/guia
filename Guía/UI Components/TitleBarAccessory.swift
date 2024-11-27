@@ -1,16 +1,19 @@
 import SwiftUI
 
 struct TitleBarAccessory: View {
-    @AppStorage("isDarkMode") private var isDarkMode = false
-    
     var body: some View {
-        Button(action: {
-            isDarkMode.toggle()
-        }) {
-            Image(systemName: isDarkMode ? "sun.max.fill" : "moon.fill")
-                .foregroundColor(.primary)
+        HStack(spacing: 12) {
+            Circle()
+                .fill(.ultraThinMaterial)
+                .frame(width: 3, height: 3)
+                .opacity(0.6)
+            
+            Text("Guía")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .opacity(0.8)
         }
-        .buttonStyle(PlainButtonStyle())
-        .frame(width: 30, height: 30)
+        .frame(height: 28)
+        .padding(.horizontal, 12)
     }
 }
