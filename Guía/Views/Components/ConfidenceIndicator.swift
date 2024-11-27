@@ -1,42 +1,36 @@
 import SwiftUI
 
 struct ConfidenceIndicator: View {
-    let value: Double
-    @State private var animatedValue: Double = 0
+    let score: Double
+    let label: String
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background track
-                Rectangle()
-                    .fill(Color.white.opacity(0.1))
-                    .cornerRadius(2)
-                
-                // Confidence level
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.accentColor.opacity(0.8),
-                                Color.accentColor
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geometry.size.width * animatedValue)
-                    .cornerRadius(2)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 13, weight: .medium))
+                Text("\(Int(score * 100))%")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.accentColor)
             }
-        }
-        .onAppear {
-            withAnimation(.spring(response: 1, dampingFraction: 0.8)) {
-                animatedValue = value
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 4)
+                        .cornerRadius(2)
+                    
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: geometry.size.width * score, height: 4)
+                        .cornerRadius(2)
+                }
             }
+            .frame(height: 4)
         }
-        .onChange(of: value) { _, newValue in
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                animatedValue = newValue
-            }
-        }
+        .padding(12)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(8)
     }
 } 

@@ -25,10 +25,13 @@ struct ContentView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         stepContent
-                            .transition(.asymmetric(
-                                insertion: .moving(edge: .trailing),
-                                removal: .moving(edge: .leading)
-                            ))
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                                    removal: .move(edge: .leading).combined(with: .opacity)
+                                )
+                            )
+                            .opacity(flowManager.isTransitioning ? 0 : 1)
                     }
                     .padding(20)
                     .padding(.bottom, 40)

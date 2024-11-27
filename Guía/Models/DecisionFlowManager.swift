@@ -24,6 +24,7 @@ class DecisionFlowManager: ObservableObject {
         }
     }
     
+    @Published var isTransitioning = false
     @Published var currentStep: DecisionStep = .initial
     @Published var showHelp = false
     @Published var progress: CGFloat = 0.0
@@ -143,9 +144,23 @@ class DecisionFlowManager: ObservableObject {
     func advanceStep() {
         guard let nextStep = currentStep.nextStep else { return }
         withAnimation(.spring(response: 0.3)) {
-            currentStep = nextStep
-            updateProgress()
-            updateNavigationState()
+            isTransitioning = true
+        }
+        
+        // Add delay to prevent overlap
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.spring(response: 0.3)) {
+                self.currentStep = nextStep
+                self.updateProgress()
+                self.updateNavigationState()
+            }
+            
+            // Reset transition state
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.spring(response: 0.3)) {
+                    self.isTransitioning = false
+                }
+            }
         }
     }
     

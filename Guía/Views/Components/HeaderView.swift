@@ -2,6 +2,18 @@ import SwiftUI
 
 struct HeaderView: View {
     let progress: Double
+    @EnvironmentObject private var flowManager: DecisionFlowManager
+    
+    private var currentStep: Step {
+        switch flowManager.currentStep {
+        case .initial: return .initial
+        case .optionEntry: return .optionEntry
+        case .factorCollection: return .factorCollection
+        case .weighting: return .weighting
+        case .scoring: return .scoring
+        case .analysis: return .analysis
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -20,47 +32,46 @@ struct HeaderView: View {
             .frame(height: 2)
             .padding(.bottom, 20)
             
-            // Step indicators
+            // Interactive step indicators
             HStack(spacing: 0) {
                 ForEach(Step.allCases, id: \.self) { step in
                     let stepProgress = step.progressValue
                     let isActive = progress >= stepProgress
+                    let isCurrent = currentStep == step
                     
-                    VStack(spacing: 8) {
-                        Text(step.title)
-                            .font(.system(size: 13, weight: isActive ? .medium : .regular))
-                            .foregroundStyle(isActive ? .primary : .secondary)
-                            .opacity(isActive ? 1 : 0.6)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                    Button(action: { navigateToStep(step) }) {
+                        VStack(spacing: 8) {
+                            Text(step.title)
+                                .font(.system(size: 13, weight: isActive ? .medium : .regular))
+                                .foregroundStyle(isActive ? .primary : .secondary)
+                                .opacity(isActive ? 1 : 0.6)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 4, height: 4)
+                                .opacity(isCurrent ? 1 : 0)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.plain)
+                    .disabled(!canNavigateToStep(step))
                 }
             }
         }
     }
-}
-
-enum Step: Int, CaseIterable {
-    case initial
-    case optionEntry
-    case factorCollection
-    case weighting
-    case scoring
-    case analysis
     
-    var title: String {
-        switch self {
-        case .initial: return "Start"
-        case .optionEntry: return "Options"
-        case .factorCollection: return "Factors"
-        case .weighting: return "Weight"
-        case .scoring: return "Score"
-        case .analysis: return "Analysis"
+    private func canNavigateToStep(_ step: Step) -> Bool {
+        let currentIndex = Step.allCases.firstIndex(of: currentStep) ?? 0
+        let targetIndex = Step.allCases.firstIndex(of: step) ?? 0
+        return targetIndex <= currentIndex + 1
+    }
+    
+    private func navigateToStep(_ step: Step) {
+        guard canNavigateToStep(step) else { return }
+        withAnimation(.spring(response: 0.3)) {
+            flowManager.currentStep = step.flowStep
         }
     }
-    
-    var progressValue: Double {
-        Double(rawValue) / Double(Step.allCases.count - 1)
-    }
-} 
+}
