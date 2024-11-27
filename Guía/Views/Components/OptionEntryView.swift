@@ -103,21 +103,21 @@ struct OptionEntryView: View {
             hasValidContent = false
         }
         
-        if fieldIndex < 2 && hasValidContent {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                focusedField = fieldIndex + 1
-                if visibleFields < fieldIndex + 2 {
-                    visibleFields = fieldIndex + 2
+        if hasValidContent {
+            if fieldIndex < 2 {
+                // Show next field if not already visible
+                if visibleFields <= fieldIndex + 1 {
+                    withAnimation(.spring(response: 0.3)) {
+                        visibleFields += 1
+                    }
                 }
+                // Move focus to next field
+                focusedField = fieldIndex + 1
             }
-        } else if hasValidContent && !firstOption.name.isEmpty && !secondOption.name.isEmpty {
-            withAnimation(.spring(response: 0.3)) {
-                flowManager.advanceStep()
-            }
+            
+            // Update flow manager progress
+            flowManager.updateProgressibility(visibleFields >= 2 && !firstOption.name.isEmpty && !secondOption.name.isEmpty)
         }
-        
-        // Update progress state
-        flowManager.updateProgressibility(!firstOption.name.isEmpty && !secondOption.name.isEmpty)
     }
     
     private func updateProgress() {

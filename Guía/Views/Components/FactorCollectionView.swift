@@ -13,7 +13,17 @@ struct FactorCollectionView: View {
         "Time investment",
         "Personal growth",
         "Impact on others",
-        "Long-term benefits"
+        "Long-term benefits",
+        "Risk level",
+        "Emotional satisfaction",
+        "Learning opportunity",
+        "Resource availability",
+        "Flexibility/Adaptability",
+        "Immediate impact",
+        "Future potential",
+        "Effort required",
+        "Quality/Reliability",
+        "Alignment with goals"
     ]
     
     var body: some View {
