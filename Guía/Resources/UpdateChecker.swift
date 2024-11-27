@@ -32,7 +32,7 @@ class UpdateChecker: ObservableObject {
     
     init() {
             self.currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
-            self.githubRepo = "nuance-dev/Guia"
+            self.githubRepo = "nuance-dev/guia"
             setupTimer()
             updateStatusIcon()
         }
