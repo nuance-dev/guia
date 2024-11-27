@@ -14,7 +14,6 @@ struct FactorScoringView: View {
     
     private func syncFactorsAcrossOptions() {
         guard let firstOption = options.first else { return }
-        // Ensure all options have the same factors
         for index in options.indices where index > 0 {
             options[index].factors = firstOption.factors
         }
@@ -32,19 +31,14 @@ struct FactorScoringView: View {
                 updatedOptions[optionIndex].scores[factorId] = newValue
                 options = updatedOptions
                 
-                // Only advance if all options have scored this factor
+                // Check if all options have been scored for current factor
                 let allScored = options.allSatisfy { option in
                     option.scores[factorId] != nil
                 }
                 
+                // Only update progressibility, don't auto-advance
                 if allScored {
-                    withAnimation(.spring(response: 0.3)) {
-                        if currentFactorIndex < (options.first?.factors.count ?? 0) - 1 {
-                            currentFactorIndex += 1
-                        } else {
-                            flowManager.updateProgressibility(true)
-                        }
-                    }
+                    flowManager.updateProgressibility(true)
                 }
             }
         )
@@ -68,7 +62,7 @@ struct FactorScoringView: View {
                     .font(.system(size: 14))
                 }
                 
-                // Progress pills
+                // Progress pills with explicit navigation
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         if let firstOption = options.first {
@@ -76,7 +70,7 @@ struct FactorScoringView: View {
                                 ProgressPill(
                                     text: firstOption.factors[index].name,
                                     isActive: index == currentFactorIndex,
-                                    isCompleted: index < currentFactorIndex
+                                    isCompleted: isFactorCompleted(index)
                                 )
                                 .onTapGesture {
                                     withAnimation(.spring(response: 0.3)) {
@@ -99,10 +93,44 @@ struct FactorScoringView: View {
                     )
                 }
             }
+            
+            // Navigation buttons
+            HStack {
+                Spacer()
+                if currentFactorIndex < (options.first?.factors.count ?? 0) - 1 {
+                    Button("Next Factor") {
+                        advanceToNextFactor()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isCurrentFactorCompleted())
+                }
+            }
         }
         .padding(24)
         .onAppear {
             syncFactorsAcrossOptions()
+        }
+    }
+    
+    private func isFactorCompleted(_ index: Int) -> Bool {
+        guard let factorId = options.first?.factors[index].id else { return false }
+        return options.allSatisfy { option in
+            option.scores[factorId] != nil
+        }
+    }
+    
+    private func isCurrentFactorCompleted() -> Bool {
+        isFactorCompleted(currentFactorIndex)
+    }
+    
+    private func advanceToNextFactor() {
+        guard isCurrentFactorCompleted(),
+              currentFactorIndex < (options.first?.factors.count ?? 0) - 1 else { return }
+        
+        withAnimation(.spring(response: 0.3)) {
+            currentFactorIndex += 1
+            // Reset progressibility for new factor
+            flowManager.updateProgressibility(false)
         }
     }
 }
