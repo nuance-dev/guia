@@ -91,11 +91,33 @@ struct OptionEntryView: View {
     }
     
     private func handleSubmit(fieldIndex: Int) {
-        if fieldIndex < 2 && visibleFields > fieldIndex + 1 {
-            focusedField = fieldIndex + 1
-        } else if fieldIndex == 1 && !secondOption.name.isEmpty {
-            flowManager.advanceStep()
+        let hasValidContent: Bool
+        switch fieldIndex {
+        case 0:
+            hasValidContent = !firstOption.name.isEmpty
+        case 1:
+            hasValidContent = !secondOption.name.isEmpty
+        case 2:
+            hasValidContent = !thirdOption.name.isEmpty
+        default:
+            hasValidContent = false
         }
+        
+        if fieldIndex < 2 && hasValidContent {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                focusedField = fieldIndex + 1
+                if visibleFields < fieldIndex + 2 {
+                    visibleFields = fieldIndex + 2
+                }
+            }
+        } else if hasValidContent && !firstOption.name.isEmpty && !secondOption.name.isEmpty {
+            withAnimation(.spring(response: 0.3)) {
+                flowManager.advanceStep()
+            }
+        }
+        
+        // Update progress state
+        flowManager.updateProgressibility(!firstOption.name.isEmpty && !secondOption.name.isEmpty)
     }
     
     private func updateProgress() {
