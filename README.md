@@ -1,6 +1,6 @@
 # Guía - A Free MacOS (14+) Native Decision Making Assistant
 
-![image](https://github.com/user-attachments/assets/d470839a-a250-4ec4-b976-1b3fe708666e)
+![Guia](https://github.com/user-attachments/assets/28dcada6-96aa-4f85-b307-4a3ef702e9fd)
 
 A sleek, native macOS app that helps you make better decisions through structured analysis and visual feedback. Built with a minimal interface and modern design.
 
