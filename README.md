@@ -49,7 +49,7 @@ Key design elements include:
 
 ## 🥑 Fun facts
 
-- Built with with Cursor and Claude 3.5 Sonnet
+- Built with Cursor and Claude 3.5 Sonnet
 - Originally v1 was an 8k line app that was completely scrapped
 
 ## 🤝 Contributing
